@@ -80,6 +80,12 @@ Func _DcGui()
 		Switch $nMsg
 			Case $GUI_EVENT_CLOSE, $ButtonCancel
 				Exit
+			Case $CheckboxActivate
+				If GUICtrlRead($CheckboxActivate) = $GUI_CHECKED Then
+					_ChangeAccessUserModeDumpControl(True, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
+				Else
+					_ChangeAccessUserModeDumpControl(False, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
+				EndIf
 			Case $ButtonOk
 				If Not _CheckBackupIniFileValues() Then _SaveValuesToIniFile() ; returns 1 if backup has already been made
 				GUICtrlSetState($ButtonReset, $GUI_ENABLE)
@@ -96,17 +102,37 @@ Func _DcGui()
 				GUICtrlSetData($InputDumpCount, 10)
 				If GUICtrlRead($InputDumpLocate) = "" Then GUICtrlSetData($InputDumpLocate, "%LOCALAPPDATA%\CrashDumps")
 				GUICtrlSetState($RadioFullDump, $GUI_CHECKED)
+				_ChangeAccessUserModeDumpControl(True, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 			Case $ButtonMicrosoft
 				GUICtrlSetState($CheckboxActivate, $GUI_CHECKED)
 				GUICtrlSetData($InputDumpCount, 10)
 				GUICtrlSetData($InputDumpLocate, "%LOCALAPPDATA%\CrashDumps")
 				GUICtrlSetState($RadioMiniDump, $GUI_CHECKED)
+				_ChangeAccessUserModeDumpControl(True, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 			Case $ButtonReset
 				_IniFileGetValues()
 				_SetValuesToUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 				_RegistryGetValues()
 		EndSwitch
 	WEnd
+
+EndFunc
+
+Func _ChangeAccessUserModeDumpControl($lActivate, ByRef $InputDumpCount, ByRef $InputDumpLocate, ByRef $RadioCustomDump, ByRef $RadioMiniDump, ByRef $RadioFullDump)
+
+	If $lActivate Then
+		GUICtrlSetState($InputDumpCount, $GUI_ENABLE)
+		GUICtrlSetState($InputDumpLocate, $GUI_ENABLE)
+		GUICtrlSetState($RadioMiniDump, $GUI_ENABLE)
+		GUICtrlSetState($RadioFullDump, $GUI_ENABLE)
+	Else
+		GUICtrlSetState($InputDumpCount, $GUI_DISABLE)
+		GUICtrlSetState($InputDumpLocate, $GUI_DISABLE)
+		GUICtrlSetState($RadioMiniDump, $GUI_DISABLE)
+		GUICtrlSetState($RadioFullDump, $GUI_DISABLE)
+	EndIf
+
+
 
 EndFunc
 
