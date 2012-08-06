@@ -97,7 +97,9 @@ Func _DcGui()
 				GUICtrlSetData($InputDumpCount, 10)
 				GUICtrlSetData($InputDumpLocate, "%LOCALAPPDATA%\CrashDumps")
 				GUICtrlSetState($RadioMiniDump, $GUI_CHECKED)
-
+			Case $ButtonReset
+				_IniFileGetValues()
+				_SetValuesToUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 		EndSwitch
 	WEnd
 
@@ -135,6 +137,17 @@ Func _RegistryWriteValues()
 		RegDelete($lRegBase, "DumpCount")
 		RegDelete($lRegBase, "DumpType")
 	EndIf
+
+EndFunc
+
+Func _IniFileGetValues()
+
+	$gaRegUserDumpValues[0] = IniRead($gFileIniValuesSave, "values", "active", "")
+	If $gaRegUserDumpValues[0] = "" Then Return SetError(1, 0, 0)
+
+	$gaRegUserDumpValues[1] = IniRead($gFileIniValuesSave, "values", "folder", "")
+	$gaRegUserDumpValues[2] = IniRead($gFileIniValuesSave, "values", "count", "")
+	$gaRegUserDumpValues[3] = IniRead($gFileIniValuesSave, "values", "type", "")
 
 EndFunc
 
@@ -194,6 +207,7 @@ EndFunc
 
 Func _SaveValuesToIniFile()
 
+	IniWrite($gFileIniValuesSave, "values", "active", $gaRegUserDumpValues[0])
 	IniWrite($gFileIniValuesSave, "values", "folder", $gaRegUserDumpValues[1])
 	IniWrite($gFileIniValuesSave, "values", "count", $gaRegUserDumpValues[2])
 	IniWrite($gFileIniValuesSave, "values", "type", $gaRegUserDumpValues[3])
