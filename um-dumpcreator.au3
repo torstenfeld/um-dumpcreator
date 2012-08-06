@@ -49,16 +49,18 @@ Func _DcGui()
 	$FormDcGui = GUICreate("Dump Configurator", 514, 376, -834, 241)
 	$GroupUser = GUICtrlCreateGroup("User Mode", 8, 32, 497, 145)
 	$CheckboxActivate = GUICtrlCreateCheckbox("Activate", 16, 48, 97, 17)
-	GUICtrlSetState(-1, $GUI_CHECKED)
+;~ 	GUICtrlSetState(-1, $GUI_CHECKED)
 	$LabelDumpCount = GUICtrlCreateLabel("Dump count", 16, 72, 72, 17)
 	$LabelDumpLocate = GUICtrlCreateLabel("Directory to store:", 16, 96, 72, 17)
 	$LabelDumpType = GUICtrlCreateLabel("Type of dump:", 16, 120, 72, 17)
 	$InputDumpCount = GUICtrlCreateInput("", 128, 72, 185, 21)
 	$InputDumpLocate = GUICtrlCreateInput("", 128, 96, 185, 21)
 	$RadioCustomDump = GUICtrlCreateRadio("Custom dump", 128, 120, 97, 17)
+	GUICtrlSetState(-1, $GUI_HIDE)
 	$RadioMiniDump = GUICtrlCreateRadio("Mini dump", 232, 120, 97, 17)
 	$RadioFullDump = GUICtrlCreateRadio("Full dump", 336, 120, 89, 17)
 	$ButtonCustomDump = GUICtrlCreateButton("Custom dump", 128, 144, 75, 25, $WS_GROUP)
+	GUICtrlSetState(-1, $GUI_HIDE)
 	$ButtonAvira = GUICtrlCreateButton("Avira recommendation", 264, 144, 115, 25, $WS_GROUP)
 	$ButtonMicrosoft = GUICtrlCreateButton("MS recommendation", 384, 144, 115, 25, $WS_GROUP)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
@@ -70,6 +72,7 @@ Func _DcGui()
 	GUISetState(@SW_SHOW)
 	#EndRegion ### END Koda GUI section ###
 
+	If Not FileExists($gFileIniValuesSave) Then GUICtrlSetState($ButtonReset, $GUI_DISABLE)
 	_SetValuesToUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 
 	While 1
@@ -79,6 +82,7 @@ Func _DcGui()
 				Exit
 			Case $ButtonOk
 				If Not _CheckBackupIniFileValues() Then _SaveValuesToIniFile() ; returns 1 if backup has already been made
+				GUICtrlSetState($ButtonReset, $GUI_ENABLE)
 				_GetValuesFromUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 				If _CompareUserDumpValues() Then
 					MsgBox(262208,"Dump configurator","No value has changed.",15)
@@ -100,6 +104,7 @@ Func _DcGui()
 			Case $ButtonReset
 				_IniFileGetValues()
 				_SetValuesToUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
+				_RegistryGetValues()
 		EndSwitch
 	WEnd
 
@@ -115,10 +120,6 @@ Func _RegistryGetValues()
 	$gaRegUserDumpValues[3] = RegRead($lRegBase, "DumpType")
 
 	If $gaRegUserDumpValues[1] <> "" Then $gaRegUserDumpValues[0] = True
-
-;~ 	_ArrayDisplay($gaRegUserDumpValues, "$gaRegUserDumpValues")
-;~ 	Exit
-
 
 EndFunc
 
