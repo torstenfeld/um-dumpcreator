@@ -299,7 +299,7 @@ EndFunc
 
 Func _CheckForUpdate()
 
-	$lVersionOnline = _INetGetSource("https://raw.github.com/torstenfeld/um-dumpcreator/registry/version.txt")
+	$lVersionOnline = _INetGetSource("https://raw.github.com/torstenfeld/um-dumpcreator/master/version.txt")
 	If _VersionCompare($gVersion, $lVersionOnline) < 0 Then
 		If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
 		$iMsgBoxAnswer = MsgBox(4,"Dump configurator","There is a new version available. Please download it from " & @CRLF & "https://github.com/torstenfeld/um-dumpcreator/downloads" & @CRLF & @CRLF & _
@@ -317,3 +317,12 @@ Func _CheckForUpdate()
 
 
 EndFunc
+
+#cs ; notes
+
+	HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CrashControl
+
+
+
+#ce
+
