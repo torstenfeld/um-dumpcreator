@@ -92,6 +92,11 @@ Func _DcGui()
 				GUICtrlSetData($InputDumpCount, 10)
 				If GUICtrlRead($InputDumpLocate) = "" Then GUICtrlSetData($InputDumpLocate, "%LOCALAPPDATA%\CrashDumps")
 				GUICtrlSetState($RadioFullDump, $GUI_CHECKED)
+			Case $ButtonMicrosoft
+				GUICtrlSetState($CheckboxActivate, $GUI_CHECKED)
+				GUICtrlSetData($InputDumpCount, 10)
+				GUICtrlSetData($InputDumpLocate, "%LOCALAPPDATA%\CrashDumps")
+				GUICtrlSetState($RadioMiniDump, $GUI_CHECKED)
 
 		EndSwitch
 	WEnd
