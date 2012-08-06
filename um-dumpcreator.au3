@@ -8,6 +8,7 @@
 	#include <GUIConstantsEx.au3>
 	#include <StaticConstants.au3>
 	#include <WindowsConstants.au3>
+	#Include <String.au3>
 
 	#include <Array.au3>
 
@@ -50,7 +51,6 @@ Func _DcGui()
 	$GroupUser = GUICtrlCreateGroup("User Mode", 8, 32, 497, 145)
 	$CheckboxActivate = GUICtrlCreateCheckbox("Activate", 16, 48, 97, 17)
 	GUICtrlSetTip(-1, "(De)activate automatic creation of process dumps, if a process crashes", Default, 0, 1)
-;~ 	GUICtrlSetState(-1, $GUI_CHECKED)
 	$LabelDumpCount = GUICtrlCreateLabel("Dump count", 16, 72, 72, 17)
 	$LabelDumpLocate = GUICtrlCreateLabel("Directory to store:", 16, 96, 72, 17)
 	$LabelDumpType = GUICtrlCreateLabel("Type of dump:", 16, 120, 72, 17)
@@ -77,6 +77,8 @@ Func _DcGui()
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 	$ButtonReset = GUICtrlCreateButton("Reset", 8, 344, 75, 25, $WS_GROUP)
 	GUICtrlSetTip(-1, "On setting a new configuration for the first time, the original config is saved for later restore", Default, 0, 1)
+	$ButtonOpen = GUICtrlCreateButton("Open folder", 88, 344, 75, 25, $WS_GROUP)
+	GUICtrlSetTip(-1, "Opens the folder, where dumps are saved", Default, 0, 1)
 	$ButtonCancel = GUICtrlCreateButton("Cancel", 352, 344, 75, 25, $WS_GROUP)
 	GUICtrlSetTip(-1, "Quits the tool", Default, 0, 1)
 	$ButtonOk = GUICtrlCreateButton("Ok", 432, 344, 75, 25, $WS_GROUP)
@@ -126,6 +128,24 @@ Func _DcGui()
 				_IniFileGetValues()
 				_SetValuesToUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 				_RegistryGetValues()
+			Case $ButtonOpen
+				$lFolderDump = GUICtrlRead($InputDumpLocate)
+				If StringInStr($lFolderDump, "%") Then
+					$lTempStringBetweenResult = StringRegExpReplace($lFolderDump, ".*\%(.*)\%.*", "$1")
+					$lFolderDump = StringReplace($lFolderDump, "%" & $lTempStringBetweenResult & "%", EnvGet($lTempStringBetweenResult))
+				EndIf
+				If FileExists($lFolderDump) Then
+					ShellExecute($lFolderDump)
+				Else
+					If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
+					$iMsgBoxAnswer = MsgBox(52,"Dump configurator","The folder " & $lFolderDump & " does not exist. Would you like to create it now?")
+					Select
+						Case $iMsgBoxAnswer = 6 ;Yes
+							DirCreate($lFolderDump)
+							ShellExecute($lFolderDump)
+;~ 						Case $iMsgBoxAnswer = 7 ;No
+					EndSelect
+				EndIf
 		EndSwitch
 	WEnd
 
@@ -144,9 +164,6 @@ Func _ChangeAccessUserModeDumpControl($lActivate, ByRef $InputDumpCount, ByRef $
 		GUICtrlSetState($RadioMiniDump, $GUI_DISABLE)
 		GUICtrlSetState($RadioFullDump, $GUI_DISABLE)
 	EndIf
-
-
-
 EndFunc
 
 Func _RegistryGetValues()
