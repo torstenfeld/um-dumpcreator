@@ -9,6 +9,8 @@
 	#include <StaticConstants.au3>
 	#include <WindowsConstants.au3>
 	#Include <String.au3>
+	#include <INet.au3>
+	#Include <Misc.au3>
 
 	#include <Array.au3>
 
@@ -25,6 +27,8 @@
 	Global $gDirTemp = @TempDir & "\dumpconfigurator"
 	Global $gFileIniValuesSave = $gDirTemp & "\savedvalues.ini"
 
+	Global $gVersion = "0.0.0.0"
+
 #endregion
 
 #region ### main
@@ -37,7 +41,7 @@
 
 Func _DcMain()
 
-
+	_CheckForUpdate()
 	_RegistryGetValues()
 ;~ 	_ArrayDisplay($gaRegUserDumpValues, "$gaRegUserDumpValues")
 	_DcGui()
@@ -282,4 +286,25 @@ Func _CheckBackupIniFileValues() ; returns 1 if backup has already been made
 	If IniRead($gFileIniValuesSave, "values", "type", "")  = "" Then Return 0
 
 	Return 1
+EndFunc
+
+Func _CheckForUpdate()
+
+	$lVersionOnline = _INetGetSource("https://raw.github.com/torstenfeld/um-dumpcreator/registry/version.txt")
+	If _VersionCompare($gVersion, $lVersionOnline) < 0 Then
+		If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
+		$iMsgBoxAnswer = MsgBox(4,"Dump configurator","There is a new version available. Please download it from " & @CRLF & "https://github.com/torstenfeld/um-dumpcreator/downloads" & @CRLF & @CRLF & _
+			"Would you like to open the site now?", 15)
+		Select
+			Case $iMsgBoxAnswer = 6 ;Yes
+				ShellExecuteWait("https://github.com/torstenfeld/um-dumpcreator/downloads")
+				Sleep(4000)
+				Exit 0
+;~ 			Case $iMsgBoxAnswer = 7 ;No
+
+		EndSelect
+	EndIf
+
+
+
 EndFunc
