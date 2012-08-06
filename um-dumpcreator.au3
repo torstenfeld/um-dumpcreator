@@ -19,6 +19,7 @@
 	If @OSArch = "X64" Then $gRegBase &= "64"
 	$gRegBase &= "\SOFTWARE\Microsoft\Windows\Windows Error Reporting"
 	Global $gaRegUserDumpValues[4] ; active, folder, count, type
+	Global $gaRegUserDumpValuesNew[4] ; active, folder, count, type
 
 	Global $gDirTemp = @TempDir & "\dumpconfigurator"
 	Global $gFileIniValuesSave = $gDirTemp & "\savedvalues.ini"
@@ -37,6 +38,7 @@ Func _DcMain()
 
 
 	_RegistryGetValues()
+	_ArrayDisplay($gaRegUserDumpValues, "$gaRegUserDumpValues")
 	_DcGui()
 
 EndFunc
@@ -48,9 +50,9 @@ Func _DcGui()
 	$GroupUser = GUICtrlCreateGroup("User Mode", 8, 32, 497, 145)
 	$CheckboxActivate = GUICtrlCreateCheckbox("Activate", 16, 48, 97, 17)
 	GUICtrlSetState(-1, $GUI_CHECKED)
-	$LabelDumpCount = GUICtrlCreateLabel("Dump count", 16, 72, 36, 17)
-	$LabelDumpLocate = GUICtrlCreateLabel("Directory to store:", 16, 96, 36, 17)
-	$LabelDumpType = GUICtrlCreateLabel("Type of dump:", 16, 120, 36, 17)
+	$LabelDumpCount = GUICtrlCreateLabel("Dump count", 16, 72, 72, 17)
+	$LabelDumpLocate = GUICtrlCreateLabel("Directory to store:", 16, 96, 72, 17)
+	$LabelDumpType = GUICtrlCreateLabel("Type of dump:", 16, 120, 72, 17)
 	$InputDumpCount = GUICtrlCreateInput("", 128, 72, 185, 21)
 	$InputDumpLocate = GUICtrlCreateInput("", 128, 96, 185, 21)
 	$RadioCustomDump = GUICtrlCreateRadio("Custom dump", 128, 120, 97, 17)
@@ -74,11 +76,16 @@ Func _DcGui()
 			Case $GUI_EVENT_CLOSE, $ButtonCancel
 				Exit
 			Case $ButtonOk
-				If Not _CheckBackupIniFileValues() Then ; returns 1 if backup has already been made
-					MsgBox(0, "test", "iniwritetest")
-;~ 					IniWrite($gFileIniValuesSave, "backup", "true", "1")
-					_SaveValuesToIniFile()
+				If Not _CheckBackupIniFileValues() Then _SaveValuesToIniFile() ; returns 1 if backup has already been made
+				_GetValuesFromUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
+				If _CompareUserDumpValues() Then
+					MsgBox(262208,"Dump configurator","No value has changed.",15)
+					ContinueLoop
 				EndIf
+				_RegistryWriteValues()
+				_RegistryGetValues()
+				_SetValuesToUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
+
 		EndSwitch
 	WEnd
 
@@ -87,12 +94,9 @@ EndFunc
 Func _RegistryGetValues()
 
 	$lRegBase = $gRegBase & "\LocalDumps"
-;~ 	$lRegBase = $gRegBase
-;~ 	MsgBox(0, "test", "$lRegBase: " & $lRegBase)
 	$gaRegUserDumpValues[0] = False
 
 	$gaRegUserDumpValues[1] = RegRead($lRegBase, "DumpFolder")
-;~ 	If @error Then MsgBox(0, "test", "error: " & @error)
 	$gaRegUserDumpValues[2] = RegRead($lRegBase, "DumpCount")
 	$gaRegUserDumpValues[3] = RegRead($lRegBase, "DumpType")
 
@@ -101,6 +105,52 @@ Func _RegistryGetValues()
 ;~ 	_ArrayDisplay($gaRegUserDumpValues, "$gaRegUserDumpValues")
 ;~ 	Exit
 
+
+EndFunc
+
+Func _RegistryWriteValues()
+
+	$lRegBase = $gRegBase & "\LocalDumps"
+	_ArrayDisplay($gaRegUserDumpValuesNew, "$gaRegUserDumpValuesNew")
+
+	If $gaRegUserDumpValuesNew[0] = True Then
+		RegWrite($lRegBase, "DumpFolder", "REG_EXPAND_SZ", $gaRegUserDumpValuesNew[1])
+		If @error Then MsgBox(0, "test", "RegWrite error: " & @error)
+		RegWrite($lRegBase, "DumpCount", "REG_DWORD", $gaRegUserDumpValuesNew[2])
+		RegWrite($lRegBase, "DumpType", "REG_DWORD", $gaRegUserDumpValuesNew[3])
+	Else
+		RegDelete($lRegBase, "DumpFolder")
+		RegDelete($lRegBase, "DumpCount")
+		RegDelete($lRegBase, "DumpType")
+	EndIf
+
+EndFunc
+
+Func _GetValuesFromUserDumpItems(ByRef $CheckboxActivate, ByRef $InputDumpCount, ByRef $InputDumpLocate, ByRef $RadioCustomDump, ByRef $RadioMiniDump, ByRef $RadioFullDump)
+
+	If GUICtrlRead($CheckboxActivate) = $GUI_UNCHECKED Then
+		$gaRegUserDumpValuesNew[0] = False
+		Return 0
+	Else
+		$gaRegUserDumpValuesNew[0] = True
+	EndIf
+
+	$gaRegUserDumpValuesNew[1] = GUICtrlRead($InputDumpLocate)
+	$gaRegUserDumpValuesNew[2] = GUICtrlRead($InputDumpCount)
+
+	If GUICtrlRead($RadioCustomDump) = $GUI_CHECKED Then $gaRegUserDumpValuesNew[3] = 0
+	If GUICtrlRead($RadioMiniDump) =  $GUI_CHECKED Then $gaRegUserDumpValuesNew[3] = 1
+	If GUICtrlRead($RadioFullDump) =  $GUI_CHECKED Then $gaRegUserDumpValuesNew[3] = 2
+
+EndFunc
+
+Func _CompareUserDumpValues() ; returns 1 if all values are the same
+
+	For $i = 0 To UBound($gaRegUserDumpValues)-1
+		If $gaRegUserDumpValues[$i] <> $gaRegUserDumpValuesNew[$i] Then Return 0
+	Next
+
+	Return 1
 
 EndFunc
 
@@ -113,8 +163,8 @@ Func _SetValuesToUserDumpItems(ByRef $CheckboxActivate, ByRef $InputDumpCount, B
 		Return SetError(1, 0, 0)
 	EndIf
 
-	GUICtrlSetData($InputDumpCount, $gaRegUserDumpValues[1])
-	GUICtrlSetData($InputDumpLocate, $gaRegUserDumpValues[2])
+	GUICtrlSetData($InputDumpLocate, $gaRegUserDumpValues[1])
+	GUICtrlSetData($InputDumpCount, $gaRegUserDumpValues[2])
 	Switch $gaRegUserDumpValues[3]
 		Case 0
 			GUICtrlSetState($RadioCustomDump, $GUI_CHECKED)
@@ -127,9 +177,6 @@ Func _SetValuesToUserDumpItems(ByRef $CheckboxActivate, ByRef $InputDumpCount, B
 			Exit(1)
 
 	EndSwitch
-
-
-
 
 EndFunc
 
