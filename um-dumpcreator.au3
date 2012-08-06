@@ -1,5 +1,14 @@
+#RequireAdmin
+#Region ;**** Directives created by AutoIt3Wrapper_GUI ****
+#AutoIt3Wrapper_icon=favicon.ico
+#AutoIt3Wrapper_outfile=dumpconfigurator.exe
+#AutoIt3Wrapper_UseX64=n
+#AutoIt3Wrapper_Res_Comment=Sets registry settings for automatic creation of user dumps
+#AutoIt3Wrapper_Res_Description=Sets registry settings for automatic creation of user dumps
+#AutoIt3Wrapper_Res_Fileversion=0.0.0.1
+#AutoIt3Wrapper_Res_LegalCopyright=Copyright © 2011 Torsten Feld - All rights reserved.
+#EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 
-#requireadmin
 
 #region ### includes
 
@@ -27,7 +36,7 @@
 	Global $gDirTemp = @TempDir & "\dumpconfigurator"
 	Global $gFileIniValuesSave = $gDirTemp & "\savedvalues.ini"
 
-	Global $gVersion = "0.0.0.0"
+	Global $gVersion = "0.0.0.1"
 
 #endregion
 
