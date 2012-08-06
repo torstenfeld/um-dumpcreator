@@ -109,6 +109,7 @@ Func _DcGui()
 				_RegistryWriteValues()
 				_RegistryGetValues()
 				_SetValuesToUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
+				MsgBox(64,"Dump configurator","The new configuration has been written to registry.",15)
 			Case $ButtonAvira
 				GUICtrlSetState($CheckboxActivate, $GUI_CHECKED)
 				GUICtrlSetData($InputDumpCount, 10)
