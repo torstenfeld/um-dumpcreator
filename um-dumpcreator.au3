@@ -41,7 +41,6 @@ Func _DcMain()
 
 EndFunc
 
-
 Func _DcGui()
 
 	#Region ### START Koda GUI section ### Form=
@@ -74,7 +73,12 @@ Func _DcGui()
 		Switch $nMsg
 			Case $GUI_EVENT_CLOSE, $ButtonCancel
 				Exit
-
+			Case $ButtonOk
+				If Not _CheckBackupIniFileValues() Then ; returns 1 if backup has already been made
+					MsgBox(0, "test", "iniwritetest")
+;~ 					IniWrite($gFileIniValuesSave, "backup", "true", "1")
+					_SaveValuesToIniFile()
+				EndIf
 		EndSwitch
 	WEnd
 
@@ -131,8 +135,19 @@ EndFunc
 
 Func _SaveValuesToIniFile()
 
-	IniWrite($gDirTemp, "values", "folder", $gaRegUserDumpValues[1])
-	IniWrite($gDirTemp, "values", "count", $gaRegUserDumpValues[2])
-	IniWrite($gDirTemp, "values", "type", $gaRegUserDumpValues[3])
+	IniWrite($gFileIniValuesSave, "values", "folder", $gaRegUserDumpValues[1])
+	IniWrite($gFileIniValuesSave, "values", "count", $gaRegUserDumpValues[2])
+	IniWrite($gFileIniValuesSave, "values", "type", $gaRegUserDumpValues[3])
 
+EndFunc
+
+Func _CheckBackupIniFileValues() ; returns 1 if backup has already been made
+
+	If Not FileExists($gFileIniValuesSave) Then Return 0
+
+	If IniRead($gFileIniValuesSave, "values", "folder", "")  = "" Then Return 0
+	If IniRead($gFileIniValuesSave, "values", "count", "")  = "" Then Return 0
+	If IniRead($gFileIniValuesSave, "values", "type", "")  = "" Then Return 0
+
+	Return 1
 EndFunc
