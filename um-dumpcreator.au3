@@ -10,6 +10,14 @@
 
 #endregion
 
+#region ### global variables
+
+	$gRegBase = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\Windows Error Reporting"
+	$gaRegUserDumpValues[4] ; active, folder, count, type
+
+
+#endregion
+
 #region ### main
 
 	_DcMain()
@@ -18,6 +26,8 @@
 
 Func _DcMain()
 
+
+	_RegistryGetValues()
 	_DcGui()
 
 
@@ -38,8 +48,8 @@ Func _DcGui()
 	$LabelDumpCount = GUICtrlCreateLabel("Dump count", 16, 72, 36, 17)
 	$LabelDumpLocate = GUICtrlCreateLabel("Directory to store:", 16, 96, 36, 17)
 	$LabelDumpType = GUICtrlCreateLabel("Type of dump:", 16, 120, 36, 17)
-	$Input1 = GUICtrlCreateInput("", 128, 72, 185, 21)
-	$Input2 = GUICtrlCreateInput("", 128, 96, 185, 21)
+	$InputDumpCount = GUICtrlCreateInput("", 128, 72, 185, 21)
+	$InputDumpLocate = GUICtrlCreateInput("", 128, 96, 185, 21)
 	$RadioCustomDump = GUICtrlCreateRadio("Custom dump", 128, 120, 97, 17)
 	$RadioMiniDump = GUICtrlCreateRadio("Mini dump", 232, 120, 97, 17)
 	$RadioFullDump = GUICtrlCreateRadio("Full dump", 336, 120, 89, 17)
@@ -52,6 +62,8 @@ Func _DcGui()
 	$ButtonOk = GUICtrlCreateButton("Ok", 432, 344, 75, 25, $WS_GROUP)
 	GUISetState(@SW_SHOW)
 	#EndRegion ### END Koda GUI section ###
+
+
 
 	While 1
 		$nMsg = GUIGetMsg()
@@ -66,3 +78,18 @@ Func _DcGui()
 
 
 EndFunc
+
+Func _RegistryGetValues()
+
+	$lRegBase = $gRegBase & "\LocalDumps"
+	$gaRegUserDumpValues[0] = False
+
+	$gaRegUserDumpValues[1] = RegRead($lRegBase, "DumpFolder")
+	$gaRegUserDumpValues[2] = RegRead($lRegBase, "DumpCount")
+	$gaRegUserDumpValues[3] = RegRead($lRegBase, "DumpType")
+
+	If $gaRegUserDumpValues[1] <> "" Then $gaRegUserDumpValues[0] = True
+
+
+EndFunc
+
