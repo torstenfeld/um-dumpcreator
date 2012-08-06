@@ -20,10 +20,14 @@
 	$gRegBase &= "\SOFTWARE\Microsoft\Windows\Windows Error Reporting"
 	Global $gaRegUserDumpValues[4] ; active, folder, count, type
 
+	Global $gDirTemp = @TempDir & "\dumpconfigurator"
+	Global $gFileIniValuesSave = $gDirTemp & "\savedvalues.ini"
 
 #endregion
 
 #region ### main
+
+	If Not FileExists($gDirTemp) Then DirCreate($gDirTemp)
 
 	_DcMain()
 
@@ -35,15 +39,10 @@ Func _DcMain()
 	_RegistryGetValues()
 	_DcGui()
 
-
-
-
-
 EndFunc
 
 
 Func _DcGui()
-
 
 	#Region ### START Koda GUI section ### Form=
 	$FormDcGui = GUICreate("Dump Configurator", 514, 376, -834, 241)
@@ -78,9 +77,6 @@ Func _DcGui()
 
 		EndSwitch
 	WEnd
-
-
-
 
 EndFunc
 
@@ -130,5 +126,13 @@ Func _SetValuesToUserDumpItems(ByRef $CheckboxActivate, ByRef $InputDumpCount, B
 
 
 
+
+EndFunc
+
+Func _SaveValuesToIniFile()
+
+	IniWrite($gDirTemp, "values", "folder", $gaRegUserDumpValues[1])
+	IniWrite($gDirTemp, "values", "count", $gaRegUserDumpValues[2])
+	IniWrite($gDirTemp, "values", "type", $gaRegUserDumpValues[3])
 
 EndFunc
