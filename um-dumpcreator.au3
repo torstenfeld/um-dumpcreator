@@ -38,7 +38,7 @@ Func _DcMain()
 
 
 	_RegistryGetValues()
-	_ArrayDisplay($gaRegUserDumpValues, "$gaRegUserDumpValues")
+;~ 	_ArrayDisplay($gaRegUserDumpValues, "$gaRegUserDumpValues")
 	_DcGui()
 
 EndFunc
@@ -59,6 +59,8 @@ Func _DcGui()
 	$RadioMiniDump = GUICtrlCreateRadio("Mini dump", 232, 120, 97, 17)
 	$RadioFullDump = GUICtrlCreateRadio("Full dump", 336, 120, 89, 17)
 	$ButtonCustomDump = GUICtrlCreateButton("Custom dump", 128, 144, 75, 25, $WS_GROUP)
+	$ButtonAvira = GUICtrlCreateButton("Avira recommendation", 264, 144, 115, 25, $WS_GROUP)
+	$ButtonMicrosoft = GUICtrlCreateButton("MS recommendation", 384, 144, 115, 25, $WS_GROUP)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 	$GroupKernel = GUICtrlCreateGroup("Kernel mode", 8, 184, 497, 153)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
@@ -85,6 +87,11 @@ Func _DcGui()
 				_RegistryWriteValues()
 				_RegistryGetValues()
 				_SetValuesToUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
+			Case $ButtonAvira
+				GUICtrlSetState($CheckboxActivate, $GUI_CHECKED)
+				GUICtrlSetData($InputDumpCount, 10)
+				If GUICtrlRead($InputDumpLocate) = "" Then GUICtrlSetData($InputDumpLocate, "%LOCALAPPDATA%\CrashDumps")
+				GUICtrlSetState($RadioFullDump, $GUI_CHECKED)
 
 		EndSwitch
 	WEnd
@@ -111,7 +118,7 @@ EndFunc
 Func _RegistryWriteValues()
 
 	$lRegBase = $gRegBase & "\LocalDumps"
-	_ArrayDisplay($gaRegUserDumpValuesNew, "$gaRegUserDumpValuesNew")
+;~ 	_ArrayDisplay($gaRegUserDumpValuesNew, "$gaRegUserDumpValuesNew")
 
 	If $gaRegUserDumpValuesNew[0] = True Then
 		RegWrite($lRegBase, "DumpFolder", "REG_EXPAND_SZ", $gaRegUserDumpValuesNew[1])
