@@ -60,7 +60,7 @@ EndFunc
 Func _DcGui()
 
 	#Region ### START Koda GUI section ### Form=
-	$FormDcGui = GUICreate("Dump Configurator", 514, 376, -834, 241)
+	$FormDcGui = GUICreate("Dump Configurator", 514, 376, 100, 100)
 	$GroupUser = GUICtrlCreateGroup("User Mode", 8, 32, 497, 145)
 	$CheckboxActivate = GUICtrlCreateCheckbox("Activate", 16, 48, 97, 17)
 	GUICtrlSetTip(-1, "(De)activate automatic creation of process dumps, if a process crashes", Default, 0, 1)
