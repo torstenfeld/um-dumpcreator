@@ -1,11 +1,10 @@
 #RequireAdmin
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_icon=favicon.ico
-#AutoIt3Wrapper_outfile=dumpconfigurator.exe
-#AutoIt3Wrapper_UseX64=n
+#AutoIt3Wrapper_outfile=dumpconfigurator-0.0.0.3.exe
 #AutoIt3Wrapper_Res_Comment=Sets registry settings for automatic creation of user dumps
 #AutoIt3Wrapper_Res_Description=Sets registry settings for automatic creation of user dumps
-#AutoIt3Wrapper_Res_Fileversion=0.0.0.1
+#AutoIt3Wrapper_Res_Fileversion=0.0.0.3
 #AutoIt3Wrapper_Res_LegalCopyright=Copyright © 2011 Torsten Feld - All rights reserved.
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 
@@ -36,7 +35,7 @@
 	Global $gDirTemp = @TempDir & "\dumpconfigurator"
 	Global $gFileIniValuesSave = $gDirTemp & "\savedvalues.ini"
 
-	Global $gVersion = "0.0.0.1"
+	Global $gVersion = "0.0.0.3"
 
 #endregion
 
@@ -51,9 +50,32 @@
 Func _DcMain()
 
 	_CheckForUpdate()
+
+	_OsCheckPreVista()
+
 	_RegistryGetValues()
 ;~ 	_ArrayDisplay($gaRegUserDumpValues, "$gaRegUserDumpValues")
 	_DcGui()
+
+EndFunc
+
+Func _OsCheckPreVista()
+
+	Switch @OSVersion
+		Case "WIN_XP", "WIN_XPe", "WIN_2000"
+			MsgBox(16,"Dump configurator","Unfortunately, Microsoft Windows below Vista is currently not supported. " & @CRLF & _
+				"Support for those Operating Systems (especially Windows XP) will be added as soon as possible. " & @CRLF & @CRLF & _
+				"Visit https://github.com/torstenfeld/um-dumpcreator for latest news.")
+			Exit 2
+		Case "WIN_2008R2", "WIN_7", "WIN_8", "WIN_2008", "WIN_VISTA", "WIN_2003"
+
+		Case Else
+			MsgBox(16,"Dump configurator","Unfortunately, the Operating System you are using currently not supported. " & @CRLF & _
+				"Please write an email to torsten@torsten-feld.de with the following information:" & @CRLF & _
+				@OSVersion & " / " & @OSBuild & " / " & @OSServicePack & @CRLF & @CRLF & _
+				"Visit https://github.com/torstenfeld/um-dumpcreator for latest news.")
+
+	EndSwitch
 
 EndFunc
 
