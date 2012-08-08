@@ -12,10 +12,12 @@
 #region ### includes
 
 	#include <ButtonConstants.au3>
+	#include <ComboConstants.au3>
 	#include <EditConstants.au3>
 	#include <GUIConstantsEx.au3>
 	#include <StaticConstants.au3>
 	#include <WindowsConstants.au3>
+
 	#Include <String.au3>
 	#include <INet.au3>
 	#Include <Misc.au3>
@@ -38,6 +40,7 @@
 	Global $gVersion = "0.0.0.3"
 
 	Global $gaProcesses
+	Global $gPreVista = False
 
 #endregion
 
@@ -54,7 +57,8 @@ Func _DcMain()
 	_CheckForUpdate()
 	_ProcessGetList()
 
-	_OsCheckPreVista()
+;~ 	_OsCheckPreVista() ;test
+	$gPreVista = True ;test
 
 	_RegistryGetValues()
 ;~ 	_ArrayDisplay($gaRegUserDumpValues, "$gaRegUserDumpValues")
@@ -66,12 +70,13 @@ Func _OsCheckPreVista()
 
 	Switch @OSVersion
 		Case "WIN_XP", "WIN_XPe", "WIN_2000"
-			MsgBox(16,"Dump configurator","Unfortunately, Microsoft Windows below Vista is currently not supported. " & @CRLF & _
-				"Support for those Operating Systems (especially Windows XP) will be added as soon as possible. " & @CRLF & @CRLF & _
-				"Visit https://github.com/torstenfeld/um-dumpcreator for latest news.")
-			Exit 2
+;~ 			MsgBox(16,"Dump configurator","Unfortunately, Microsoft Windows below Vista is currently not supported. " & @CRLF & _
+;~ 				"Support for those Operating Systems (especially Windows XP) will be added as soon as possible. " & @CRLF & @CRLF & _
+;~ 				"Visit https://github.com/torstenfeld/um-dumpcreator for latest news.")
+;~ 			Exit 2
+			$gPreVista = True
 		Case "WIN_2008R2", "WIN_7", "WIN_8", "WIN_2008", "WIN_VISTA", "WIN_2003"
-
+			$gPreVista = False
 		Case Else
 			MsgBox(16,"Dump configurator","Unfortunately, the Operating System you are using currently not supported. " & @CRLF & _
 				"Please write an email to torsten@torsten-feld.de with the following information:" & @CRLF & _
@@ -85,8 +90,8 @@ EndFunc
 Func _DcGui()
 
 	#Region ### START Koda GUI section ### Form=
-	$FormDcGui = GUICreate("Dump Configurator", 514, 376, 100, 100)
-	$GroupUser = GUICtrlCreateGroup("User Mode", 8, 32, 497, 145)
+	$FormDcGui = GUICreate("Dump Configurator", 516, 633, 100, 100)
+	$GroupUserAutomatic = GUICtrlCreateGroup("User Mode Automatic (only availble in Vista and above)", 8, 32, 497, 145)
 	$CheckboxActivate = GUICtrlCreateCheckbox("Activate", 16, 48, 97, 17)
 	GUICtrlSetTip(-1, "(De)activate automatic creation of process dumps, if a process crashes", Default, 0, 1)
 	$LabelDumpCount = GUICtrlCreateLabel("Dump count", 16, 72, 72, 17)
@@ -111,16 +116,23 @@ Func _DcGui()
 	$ButtonMicrosoft = GUICtrlCreateButton("MS recommendation", 384, 144, 115, 25, $WS_GROUP)
 	GUICtrlSetTip(-1, "Setting configuration, which is recommended by Microsoft for daily work", Default, 0, 1)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
-	$GroupKernel = GUICtrlCreateGroup("Kernel mode", 8, 184, 497, 153)
+
+	$GroupUserManual = GUICtrlCreateGroup("User Mode Manual", 8, 184, 497, 249)
+	$Label1 = GUICtrlCreateLabel("Choose Process:", 16, 208, 84, 17)
+	$Combo1 = GUICtrlCreateCombo("Combo1", 128, 208, 217, 25)
+	$ButtonRefresh = GUICtrlCreateButton("Refresh", 360, 208, 75, 25, $WS_GROUP)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
-	$ButtonReset = GUICtrlCreateButton("Reset", 8, 344, 75, 25, $WS_GROUP)
-	GUICtrlSetTip(-1, "On setting a new configuration for the first time, the original config is saved for later restore", Default, 0, 1)
-	$ButtonOpen = GUICtrlCreateButton("Open folder", 88, 344, 75, 25, $WS_GROUP)
-	GUICtrlSetTip(-1, "Opens the folder, where dumps are saved", Default, 0, 1)
-	$ButtonCancel = GUICtrlCreateButton("Cancel", 352, 344, 75, 25, $WS_GROUP)
-	GUICtrlSetTip(-1, "Quits the tool", Default, 0, 1)
-	$ButtonOk = GUICtrlCreateButton("Ok", 432, 344, 75, 25, $WS_GROUP)
-	GUICtrlSetTip(-1, "Configuration is written to registry", Default, 0, 1)
+
+	$GroupKernel = GUICtrlCreateGroup("Kernel mode", 8, 440, 497, 153)
+	GUICtrlCreateGroup("", -99, -99, 1, 1)
+	$ButtonReset = GUICtrlCreateButton("Reset", 8, 600, 75, 25, $WS_GROUP)
+	GUICtrlSetTip(-1, "On setting a new configuration for the first time, the original config is saved for later restore")
+	$ButtonOpen = GUICtrlCreateButton("Open folder", 88, 600, 75, 25, $WS_GROUP)
+	GUICtrlSetTip(-1, "Opens the folder, where dumps are saved")
+	$ButtonCancel = GUICtrlCreateButton("Cancel", 352, 600, 75, 25, $WS_GROUP)
+	GUICtrlSetTip(-1, "Quits the tool")
+	$ButtonOk = GUICtrlCreateButton("Ok", 432, 600, 75, 25, $WS_GROUP)
+	GUICtrlSetTip(-1, "Configuration is written to registry")
 	GUISetState(@SW_SHOW)
 	#EndRegion ### END Koda GUI section ###
 
@@ -128,6 +140,13 @@ Func _DcGui()
 	_SetValuesToUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 
 	If GUICtrlRead($CheckboxActivate) <> $GUI_CHECKED Then _ChangeAccessUserModeDumpControl(False, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
+
+	If $gPreVista Then
+		_ChangeAccessUserModeDumpControl(False, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
+		GUICtrlSetState($CheckboxActivate, $GUI_DISABLE)
+		GUICtrlSetState($ButtonAvira, $GUI_DISABLE)
+		GUICtrlSetState($ButtonMicrosoft, $GUI_DISABLE)
+	EndIf
 
 	While 1
 		$nMsg = GUIGetMsg()
