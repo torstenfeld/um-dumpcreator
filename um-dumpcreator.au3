@@ -17,6 +17,7 @@
 	#include <GUIConstantsEx.au3>
 	#include <StaticConstants.au3>
 	#include <WindowsConstants.au3>
+	#include <WinAPI.au3>
 
 	#include <GuiComboBox.au3>
 
@@ -44,9 +45,16 @@
 	Global $gaProcesses
 	Global $gPreVista = False
 
+	Global $pos1 = MouseGetPos()
+	Global $pos2 = MouseGetPos() ; must be initialized
+	Global $appHandle = 0
+
 #endregion
 
 #region ### main
+
+;~ 	AutoItSetOption("MustDeclareVars", 1)
+	AutoItSetOption("MouseCoordMode", 1)
 
 	If Not FileExists($gDirTemp) Then DirCreate($gDirTemp)
 
@@ -91,6 +99,8 @@ EndFunc
 
 Func _DcGui()
 
+	Local $lChButtonActive = False
+
 	#Region ### START Koda GUI section ### Form=
 	$FormDcGui = GUICreate("Dump Configurator", 516, 633, 100, 100)
 	$GroupUserAutomatic = GUICtrlCreateGroup("User Mode Automatic (only availble in Vista and above)", 8, 32, 497, 145)
@@ -123,6 +133,7 @@ Func _DcGui()
 	$Label1 = GUICtrlCreateLabel("Choose Process:", 16, 208, 84, 17)
 	$ComboProcesses = GUICtrlCreateCombo("", 128, 208, 217, 25)
 	$ButtonRefresh = GUICtrlCreateButton("Refresh", 360, 208, 75, 25, $WS_GROUP)
+	$ButtonCrosshair = GUICtrlCreateButton("", 472, 208, 27, 25, $WS_GROUP)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
 	$GroupKernel = GUICtrlCreateGroup("Kernel mode", 8, 440, 497, 153)
@@ -157,6 +168,15 @@ Func _DcGui()
 		Switch $nMsg
 			Case $GUI_EVENT_CLOSE, $ButtonCancel
 				Exit
+			Case $ButtonCrosshair
+				If $lChButtonActive Then
+					AdlibUnRegister("_Mouse_Control_GetInfoAdlib")
+					ToolTip("")
+					$lChButtonActive = False
+				Else
+					AdlibRegister("_Mouse_Control_GetInfoAdlib", 10)
+					$lChButtonActive = True
+				EndIf
 			Case $CheckboxActivate
 				If GUICtrlRead($CheckboxActivate) = $GUI_CHECKED Then
 					_ChangeAccessUserModeDumpControl(True, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
@@ -244,6 +264,80 @@ Func _GuiComboProcessFill(ByRef $ComboProcesses)
 	_GUICtrlComboBox_EndUpdate($ComboProcesses)
 
 EndFunc
+
+Func _Mouse_Control_GetInfoAdlib()
+
+    $pos1 = MouseGetPos()
+    If $pos1[0] <> $pos2[0] Or $pos1[1] <> $pos2[1] Then ; has the mouse moved?
+        Local $a_info = _Mouse_Control_GetInfo()
+        Local $aDLL = DllCall('User32.dll', 'int', 'GetDlgCtrlID', 'hwnd', $a_info[0]) ; get the ID of the control
+        If @error Then Return
+        ToolTip("Handle = " & $a_info[0] & @CRLF & _
+                "Class = " & $a_info[1] & @CRLF & _
+                "ID = " & $aDLL[0] & @CRLF & _
+                "Mouse X Pos = " & $a_info[2] & @CRLF & _
+                "Mouse Y Pos = " & $a_info[3] & @CRLF & _
+                "ClassNN = " & $a_info[4] & @CRLF & _ ; optional
+                "Parent Hwd = " & _WinAPI_GetAncestor($appHandle, $GA_ROOT))
+        $pos2 = MouseGetPos()
+    EndIf
+EndFunc   ;==>_Mouse_Control_GetInfoAdlib
+
+Func _Mouse_Control_GetInfo()
+    Local $client_mpos = $pos1 ; gets client coords because of "MouseCoordMode" = 2
+    Local $a_mpos
+;~  Call to removed due to offset issue $a_mpos = _ClientToScreen($appHandle, $client_mpos[0], $client_mpos[1]) ; $a_mpos now screen coords
+    $a_mpos = $client_mpos
+    $appHandle = GetHoveredHwnd($client_mpos[0], $client_mpos[1]) ; Uses the mouse to do the equivalent of WinGetHandle()
+
+    If @error Then Return SetError(1, 0, 0)
+    Local $a_wfp = DllCall("user32.dll", "hwnd", "WindowFromPoint", "long", $a_mpos[0], "long", $a_mpos[1]) ; gets the control handle
+    If @error Then Return SetError(2, 0, 0)
+
+    Local $t_class = DllStructCreate("char[260]")
+    DllCall("User32.dll", "int", "GetClassName", "hwnd", $a_wfp[0], "ptr", DllStructGetPtr($t_class), "int", 260)
+    Local $a_ret[5] = [$a_wfp[0], DllStructGetData($t_class, 1), $a_mpos[0], $a_mpos[1], "none"]
+    Local $sClassNN = _ControlGetClassnameNN($a_ret[0]) ; optional, will run faster without it
+    $a_ret[4] = $sClassNN
+
+    Return $a_ret
+EndFunc   ;==>_Mouse_Control_GetInfo
+
+Func GetHoveredHwnd($i_xpos, $i_ypos)
+    Local $iRet = DllCall("user32.dll", "int", "WindowFromPoint", "long", $i_xpos, "long", $i_ypos)
+    If IsArray($iRet) Then
+        $appHandle = $iRet[0]
+        Return HWnd($iRet[0])
+    Else
+        Return SetError(1, 0, 0)
+    EndIf
+EndFunc   ;==>GetHoveredHwnd
+
+Func _ControlGetClassnameNN($hControl)
+    If Not IsHWnd($hControl) Then Return SetError(1, 0, "")
+    Local Const $hParent = _WinAPI_GetAncestor($appHandle, $GA_ROOT) ; get the Window handle, this is set in GetHoveredHwnd()
+    If Not $hParent Then Return SetError(2, 0, "")
+
+    Local Const $sList = WinGetClassList($hParent) ; list of every class in the Window
+    Local $aList = StringSplit(StringTrimRight($sList, 1), @LF, 2)
+    _ArraySort($aList) ; improves speed
+    Local $nInstance, $sLastClass, $sComposite
+
+    For $i = 0 To UBound($aList) - 1
+        If $sLastClass <> $aList[$i] Then ; set up the first occurrence of a unique classname
+            $sLastClass = $aList[$i]
+            $nInstance = 1
+        EndIf
+        $sComposite = $sLastClass & $nInstance ;build the ClassNN for testing with ControlGetHandle. ClassNN = Class & ClassCount
+        ;if ControlGetHandle(ClassNN) matches the given control return else look at the next instance of the classname
+        If ControlGetHandle($hParent, "", $sComposite) = $hControl Then
+            Return $sComposite
+        EndIf
+        $nInstance += 1 ; count the number of times the class name appears in the list
+    Next
+    Return SetError(3, 0, "")
+
+EndFunc   ;==>_ControlGetClassnameNN
 
 Func _RegistryGetValues()
 
