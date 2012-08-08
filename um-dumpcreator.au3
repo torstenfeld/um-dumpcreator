@@ -281,8 +281,9 @@ Func _DcGui()
 				EndIf
 				$lAdPlusParameters &= " -p " & StringRegExpReplace(GUICtrlRead($ComboProcesses), ".*\((\d*)\).*", "$1") & _
 					' -o "' & GUICtrlRead($InputUserLocation) & _
-					'" -quiet';-lcq'
-;~ 					'" -quiet -FullOnFirst -do';-lcq'
+					'" -quiet -FullOnFirst';-lcq'
+;~ 					'" -quiet';-lcq'
+
 ;~ 				MsgBox(0, "test", "$lAdPlusParameters: " & @CRLF & $lAdPlusParameters) ;test
 				RunWait(@ComSpec & " /c " & $lFileAdPlus & $lAdPlusParameters);, @SW_HIDE)
 				FileDelete($lFileAdPlus)
@@ -321,6 +322,7 @@ Func _ProcessGetList()
 EndFunc
 
 Func _GuiComboProcessFill()
+	_GUICtrlComboBox_ResetContent($ComboProcesses)
 	_GUICtrlComboBox_BeginUpdate($ComboProcesses)
 	For $i = 1 To $gaProcesses[0][0]
 		_GUICtrlComboBox_AddString($ComboProcesses, $gaProcesses[$i][0] & " (" & $gaProcesses[$i][1] & ")")
