@@ -52,6 +52,13 @@
 	Global $pos2 = MouseGetPos() ; must be initialized
 	Global $appHandle = 0
 
+	Global $gProcess
+	Global $gProcCmdLine
+	Global $gToolTipTxt
+	Global $gProcessCrashed
+
+	Global $ComboProcesses
+
 #endregion
 
 #region ### main
@@ -164,7 +171,7 @@ Func _DcGui()
 		GUICtrlSetState($ButtonMicrosoft, $GUI_DISABLE)
 	EndIf
 
-	_GuiComboProcessFill($ComboProcesses)
+	_GuiComboProcessFill()
 
 	While 1
 		$nMsg = GUIGetMsg()
@@ -177,6 +184,8 @@ Func _DcGui()
 					ToolTip("")
 					$lChButtonActive = False
 				Else
+					_ProcessGetList()
+					_GuiComboProcessFill()
 					AdlibRegister("_Mouse_Control_GetInfoAdlib", 10)
 					$lChButtonActive = True
 				EndIf
@@ -259,7 +268,7 @@ Func _ProcessGetList()
 
 EndFunc
 
-Func _GuiComboProcessFill(ByRef $ComboProcesses)
+Func _GuiComboProcessFill()
 	_GUICtrlComboBox_BeginUpdate($ComboProcesses)
 	For $i = 1 To $gaProcesses[0][0]
 		_GUICtrlComboBox_AddString($ComboProcesses, $gaProcesses[$i][0] & " (" & $gaProcesses[$i][1] & ")")
@@ -271,13 +280,26 @@ EndFunc
 Func _ProcessGetExe($lHandle) ; returns process executable
 
 	Local $lPid = WinGetProcess($lHandle)
-	Return $gaProcesses[_ArraySearch($gaProcesses, $lPid, 0, 0, 0, 0, 1, 1)][0]
+	Local $lArrayResult = _ArraySearch($gaProcesses, $lPid, 0, 0, 0, 0, 1, 1)
+	If @error Then
+		_ProcessGetList()
+		_GuiComboProcessFill()
+		$lArrayResult = _ArraySearch($gaProcesses, $lPid, 0, 0, 0, 0, 1, 1)
+	EndIf
+	Return $gaProcesses[$lArrayResult][0]
 
 EndFunc
 
 Func _Mouse_Control_GetInfoAdlib()
 
-	Local $lProcess, $lProcCmdLine, $lToolTipTxt
+	If _IsPressed(0x01) Then
+		Switch $gProcess
+			Case "WerFault.exe"
+				_GUICtrlComboBox_SelectString($ComboProcesses, $gProcessCrashed)
+			Case Else
+				_GUICtrlComboBox_SelectString($ComboProcesses, $gProcess)
+		EndSwitch
+	EndIf
 
     $pos1 = MouseGetPos()
 
@@ -286,13 +308,23 @@ Func _Mouse_Control_GetInfoAdlib()
         Local $aDLL = DllCall('User32.dll', 'int', 'GetDlgCtrlID', 'hwnd', $a_info[0]) ; get the ID of the control
         If @error Then Return
 
-		$lProcess = _ProcessGetExe($a_info[0])
-		$lProcCmdLine = _WinAPI_GetProcessCommandLine(WinGetProcess($a_info[0]))
+		If @Compiled Then
+			$lProcessExclude = @ScriptName
+		Else
+			$lProcessExclude = "AutoIt3.exe"
+		EndIf
+		If _ProcessGetExe($a_info[0]) = $lProcessExclude Then
+			ToolTip("")
+			Return 0
+		EndIf
+		$gProcess = _ProcessGetExe($a_info[0])
+		$gProcCmdLine = _WinAPI_GetProcessCommandLine(WinGetProcess($a_info[0]))
 
-		$lToolTipTxt = "Proc = " & $lProcess & @CRLF & "ProcCmdLine = " & $lProcCmdLine
-		Switch $lProcess
+		$gToolTipTxt = "Proc = " & $gProcess & @CRLF & "ProcCmdLine = " & $gProcCmdLine
+		Switch $gProcess
 			Case "WerFault.exe"
-				$lToolTipTxt &= @CRLF & "Crash in = " & $gaProcesses[_ArraySearch($gaProcesses, StringRegExpReplace($lProcCmdLine, ".*\-p\s(\d*)\s.*", "$1"), 0, 0, 0, 0, 1, 1)][0]
+				$gProcessCrashed = $gaProcesses[_ArraySearch($gaProcesses, StringRegExpReplace($gProcCmdLine, ".*\-p\s(\d*)\s.*", "$1"), 0, 0, 0, 0, 1, 1)][0]
+				$gToolTipTxt &= @CRLF & "Crash in = " & $gProcessCrashed
 		EndSwitch
 
 ;~         ToolTip("Handle = " & $a_info[0] & @CRLF & _
@@ -306,10 +338,12 @@ Func _Mouse_Control_GetInfoAdlib()
 ;~                 "Parent Hwd = " & _WinAPI_GetAncestor($appHandle, $GA_ROOT) & @CRLF & _
 ;~                 "Parent Proc = " & _ProcessGetExe(_WinAPI_GetAncestor($appHandle, $GA_ROOT)) & @CRLF & _
 ;~                 "Parent CmdLine = " & _WinAPI_GetProcessCommandLine(WinGetProcess(_WinAPI_GetAncestor($appHandle, $GA_ROOT))))
-        ToolTip($lToolTipTxt)
+        ToolTip($gToolTipTxt)
 
         $pos2 = MouseGetPos()
+
     EndIf
+
 EndFunc   ;==>_Mouse_Control_GetInfoAdlib
 
 Func _Mouse_Control_GetInfo()
