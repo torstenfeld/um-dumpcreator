@@ -27,6 +27,9 @@
 
 	#include <Array.au3>
 
+	#include ".\incs\APIConstants.au3"
+	#include ".\incs\WinAPIEx.au3"
+
 #endregion
 
 #region ### global variables
@@ -265,20 +268,46 @@ Func _GuiComboProcessFill(ByRef $ComboProcesses)
 
 EndFunc
 
+Func _ProcessGetExe($lHandle) ; returns process executable
+
+	Local $lPid = WinGetProcess($lHandle)
+	Return $gaProcesses[_ArraySearch($gaProcesses, $lPid, 0, 0, 0, 0, 1, 1)][0]
+
+EndFunc
+
 Func _Mouse_Control_GetInfoAdlib()
 
+	Local $lProcess, $lProcCmdLine, $lToolTipTxt
+
     $pos1 = MouseGetPos()
+
     If $pos1[0] <> $pos2[0] Or $pos1[1] <> $pos2[1] Then ; has the mouse moved?
         Local $a_info = _Mouse_Control_GetInfo()
         Local $aDLL = DllCall('User32.dll', 'int', 'GetDlgCtrlID', 'hwnd', $a_info[0]) ; get the ID of the control
         If @error Then Return
-        ToolTip("Handle = " & $a_info[0] & @CRLF & _
-                "Class = " & $a_info[1] & @CRLF & _
-                "ID = " & $aDLL[0] & @CRLF & _
-                "Mouse X Pos = " & $a_info[2] & @CRLF & _
-                "Mouse Y Pos = " & $a_info[3] & @CRLF & _
-                "ClassNN = " & $a_info[4] & @CRLF & _ ; optional
-                "Parent Hwd = " & _WinAPI_GetAncestor($appHandle, $GA_ROOT))
+
+		$lProcess = _ProcessGetExe($a_info[0])
+		$lProcCmdLine = _WinAPI_GetProcessCommandLine(WinGetProcess($a_info[0]))
+
+		$lToolTipTxt = "Proc = " & $lProcess & @CRLF & "ProcCmdLine = " & $lProcCmdLine
+		Switch $lProcess
+			Case "WerFault.exe"
+				$lToolTipTxt &= @CRLF & "Crash in = " & $gaProcesses[_ArraySearch($gaProcesses, StringRegExpReplace($lProcCmdLine, ".*\-p\s(\d*)\s.*", "$1"), 0, 0, 0, 0, 1, 1)][0]
+		EndSwitch
+
+;~         ToolTip("Handle = " & $a_info[0] & @CRLF & _
+;~ 				"Proc = " & _ProcessGetExe($a_info[0]) & @CRLF & _
+;~ 				"ProcCmdLine = " & _WinAPI_GetProcessCommandLine(WinGetProcess($a_info[0])) & @CRLF & _
+;~                 "Class = " & $a_info[1] & @CRLF & _
+;~                 "ID = " & $aDLL[0] & @CRLF & _
+;~                 "Mouse X Pos = " & $a_info[2] & @CRLF & _
+;~                 "Mouse Y Pos = " & $a_info[3] & @CRLF & _
+;~                 "ClassNN = " & $a_info[4] & @CRLF & _ ; optional
+;~                 "Parent Hwd = " & _WinAPI_GetAncestor($appHandle, $GA_ROOT) & @CRLF & _
+;~                 "Parent Proc = " & _ProcessGetExe(_WinAPI_GetAncestor($appHandle, $GA_ROOT)) & @CRLF & _
+;~                 "Parent CmdLine = " & _WinAPI_GetProcessCommandLine(WinGetProcess(_WinAPI_GetAncestor($appHandle, $GA_ROOT))))
+        ToolTip($lToolTipTxt)
+
         $pos2 = MouseGetPos()
     EndIf
 EndFunc   ;==>_Mouse_Control_GetInfoAdlib
