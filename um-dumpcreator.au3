@@ -18,6 +18,8 @@
 	#include <StaticConstants.au3>
 	#include <WindowsConstants.au3>
 
+	#include <GuiComboBox.au3>
+
 	#Include <String.au3>
 	#include <INet.au3>
 	#Include <Misc.au3>
@@ -119,7 +121,7 @@ Func _DcGui()
 
 	$GroupUserManual = GUICtrlCreateGroup("User Mode Manual", 8, 184, 497, 249)
 	$Label1 = GUICtrlCreateLabel("Choose Process:", 16, 208, 84, 17)
-	$Combo1 = GUICtrlCreateCombo("Combo1", 128, 208, 217, 25)
+	$ComboProcesses = GUICtrlCreateCombo("", 128, 208, 217, 25)
 	$ButtonRefresh = GUICtrlCreateButton("Refresh", 360, 208, 75, 25, $WS_GROUP)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
@@ -147,6 +149,8 @@ Func _DcGui()
 		GUICtrlSetState($ButtonAvira, $GUI_DISABLE)
 		GUICtrlSetState($ButtonMicrosoft, $GUI_DISABLE)
 	EndIf
+
+	_GuiComboProcessFill($ComboProcesses)
 
 	While 1
 		$nMsg = GUIGetMsg()
@@ -229,6 +233,15 @@ Func _ProcessGetList()
 
 	$gaProcesses = ProcessList()
 	If $gaProcesses[0][0] = 0 Then Return SetError(1, 0, 1)
+
+EndFunc
+
+Func _GuiComboProcessFill(ByRef $ComboProcesses)
+	_GUICtrlComboBox_BeginUpdate($ComboProcesses)
+	For $i = 1 To $gaProcesses[0][0]
+		_GUICtrlComboBox_AddString($ComboProcesses, $gaProcesses[$i][0] & " (" & $gaProcesses[$i][1] & ")")
+	Next
+	_GUICtrlComboBox_EndUpdate($ComboProcesses)
 
 EndFunc
 
