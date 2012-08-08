@@ -34,18 +34,18 @@
 ; Standard Access Rights
 ; ===============================================================================================================================
 
-;Global Const $DELETE = 0x00010000
-;Global Const $READ_CONTROL = 0x00020000
-;Global Const $WRITE_DAC = 0x00040000
-;Global Const $WRITE_OWNER = 0x00080000
-;Global Const $SYNCHRONIZE = 0x00100000
+Global Const $DELETE = 0x00010000
+Global Const $READ_CONTROL = 0x00020000
+Global Const $WRITE_DAC = 0x00040000
+Global Const $WRITE_OWNER = 0x00080000
+Global Const $SYNCHRONIZE = 0x00100000
 Global Const $ACCESS_SYSTEM_SECURITY = 0x01000000
 
-;Global Const $STANDARD_RIGHTS_ALL = BitOR($DELETE, $READ_CONTROL, $SYNCHRONIZE, $WRITE_DAC, $WRITE_OWNER)
-;Global Const $STANDARD_RIGHTS_EXECUTE = $READ_CONTROL
-;Global Const $STANDARD_RIGHTS_READ = $READ_CONTROL
-;Global Const $STANDARD_RIGHTS_REQUIRED = BitOR($DELETE, $READ_CONTROL, $WRITE_DAC, $WRITE_OWNER)
-;Global Const $STANDARD_RIGHTS_WRITE = $READ_CONTROL
+Global Const $STANDARD_RIGHTS_ALL = BitOR($DELETE, $READ_CONTROL, $SYNCHRONIZE, $WRITE_DAC, $WRITE_OWNER)
+Global Const $STANDARD_RIGHTS_EXECUTE = $READ_CONTROL
+Global Const $STANDARD_RIGHTS_READ = $READ_CONTROL
+Global Const $STANDARD_RIGHTS_REQUIRED = BitOR($DELETE, $READ_CONTROL, $WRITE_DAC, $WRITE_OWNER)
+Global Const $STANDARD_RIGHTS_WRITE = $READ_CONTROL
 
 ; ===============================================================================================================================
 ; Window Classes

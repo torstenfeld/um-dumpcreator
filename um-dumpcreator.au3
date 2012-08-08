@@ -27,6 +27,8 @@
 
 	#include <Array.au3>
 
+	#include ".\incs\APIErrors.au3"
+	#include ".\incs\NTErrors.au3"
 	#include ".\incs\APIConstants.au3"
 	#include ".\incs\WinAPIEx.au3"
 
@@ -268,6 +270,10 @@ Func _DcGui()
 				EndIf
 				Local $lFileAdPlus = $gDirTemp & "\adplus.vbs"
 				FileInstall(".\tools\adplus.vbs", $lFileAdPlus, 1)
+				FileInstall(".\tools\cdb.exe", $gDirTemp & "\cdb.exe", 1)
+				FileInstall(".\tools\dbgeng.dll", $gDirTemp & "\dbgeng.dll", 1)
+				FileInstall(".\tools\dbghelp.dll", $gDirTemp & "\dbghelp.dll", 1)
+				FileInstall(".\tools\tlist.exe", $gDirTemp & "\tlist.exe", 1)
 				If GUICtrlRead($RadioUserCrash) = $GUI_CHECKED Then
 					$lAdPlusParameters = " -Crash"
 				Else
@@ -275,10 +281,15 @@ Func _DcGui()
 				EndIf
 				$lAdPlusParameters &= " -p " & StringRegExpReplace(GUICtrlRead($ComboProcesses), ".*\((\d*)\).*", "$1") & _
 					' -o "' & GUICtrlRead($InputUserLocation) & _
-					'" -quiet -FullOnFirst'
-				MsgBox(0, "test", "$lAdPlusParameters: " & @CRLF & $lAdPlusParameters) ;test
-;~ 				RunWait(@ComSpec & " /c " & $lFileAdPlus & $lAdPlusParameters);, @SW_HIDE)
-;~ 				FileDelete($lFileAdPlus)
+					'" -quiet';-lcq'
+;~ 					'" -quiet -FullOnFirst -do';-lcq'
+;~ 				MsgBox(0, "test", "$lAdPlusParameters: " & @CRLF & $lAdPlusParameters) ;test
+				RunWait(@ComSpec & " /c " & $lFileAdPlus & $lAdPlusParameters);, @SW_HIDE)
+				FileDelete($lFileAdPlus)
+				FileDelete($gDirTemp & "\cdb.exe")
+				FileDelete($gDirTemp & "\dbgeng.dll")
+				FileDelete($gDirTemp & "\dbghelp.dll")
+				FileDelete($gDirTemp & "\tlist.exe")
 				MsgBox(0, "test", "dump successfully created")
 
 		EndSwitch
@@ -349,12 +360,13 @@ Func _Mouse_Control_GetInfoAdlib()
         Local $aDLL = DllCall('User32.dll', 'int', 'GetDlgCtrlID', 'hwnd', $a_info[0]) ; get the ID of the control
         If @error Then Return
 
-		If @Compiled Then
-			$lProcessExclude = @ScriptName
-		Else
-			$lProcessExclude = "AutoIt3.exe"
-		EndIf
-		If _ProcessGetExe($a_info[0]) = $lProcessExclude Then
+;~ 		If @Compiled Then
+;~ 			$lProcessExclude = @ScriptName
+;~ 		Else
+;~ 			$lProcessExclude = "AutoIt3.exe"
+;~ 		EndIf
+;~ 		If _ProcessGetExe($a_info[0]) = $lProcessExclude Then
+		If _ProcessGetExe($a_info[0]) = @AutoItExe Then
 			ToolTip("")
 			Return 0
 		EndIf
