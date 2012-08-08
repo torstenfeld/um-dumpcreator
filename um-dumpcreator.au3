@@ -257,6 +257,29 @@ Func _DcGui()
 				$gDirUserManualDump = FileSelectFolder("Please choose a directoy to store the dumps", "", 7, $gDirUserManualDump, $FormDcGui)
 				If @error Then ContinueLoop
 				GUICtrlSetData($InputUserLocation, $gDirUserManualDump)
+			Case $ButtonUserCreateDump
+				If GUICtrlRead($ComboProcesses) = "" Then
+					MsgBox(0, "error", "error")
+					ContinueLoop
+				EndIf
+				If Not FileExists(GUICtrlRead($InputUserLocation)) Then
+					MsgBox(0, "error", "error")
+					ContinueLoop
+				EndIf
+				Local $lFileAdPlus = $gDirTemp & "\adplus.vbs"
+				FileInstall(".\tools\adplus.vbs", $lFileAdPlus, 1)
+				If GUICtrlRead($RadioUserCrash) = $GUI_CHECKED Then
+					$lAdPlusParameters = " -Crash"
+				Else
+					$lAdPlusParameters = " -Hang"
+				EndIf
+				$lAdPlusParameters &= " -p " & StringRegExpReplace(GUICtrlRead($ComboProcesses), ".*\((\d*)\).*", "$1") & _
+					' -o "' & GUICtrlRead($InputUserLocation) & _
+					'" -quiet -FullOnFirst'
+				MsgBox(0, "test", "$lAdPlusParameters: " & @CRLF & $lAdPlusParameters) ;test
+;~ 				RunWait(@ComSpec & " /c " & $lFileAdPlus & $lAdPlusParameters);, @SW_HIDE)
+;~ 				FileDelete($lFileAdPlus)
+				MsgBox(0, "test", "dump successfully created")
 
 		EndSwitch
 	WEnd
