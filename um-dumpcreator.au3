@@ -37,6 +37,8 @@
 
 	Global $gVersion = "0.0.0.3"
 
+	Global $gaProcesses
+
 #endregion
 
 #region ### main
@@ -50,6 +52,7 @@
 Func _DcMain()
 
 	_CheckForUpdate()
+	_ProcessGetList()
 
 	_OsCheckPreVista()
 
@@ -201,6 +204,13 @@ Func _ChangeAccessUserModeDumpControl($lActivate, ByRef $InputDumpCount, ByRef $
 		GUICtrlSetState($RadioMiniDump, $GUI_DISABLE)
 		GUICtrlSetState($RadioFullDump, $GUI_DISABLE)
 	EndIf
+EndFunc
+
+Func _ProcessGetList()
+
+	$gaProcesses = ProcessList()
+	If $gaProcesses[0][0] = 0 Then Return SetError(1, 0, 1)
+
 EndFunc
 
 Func _RegistryGetValues()
