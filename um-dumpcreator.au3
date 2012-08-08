@@ -141,7 +141,7 @@ Func _DcGui()
 
 	$GroupUserManual = GUICtrlCreateGroup("User Mode Manual", 8, 184, 497, 249)
 	$Label1 = GUICtrlCreateLabel("Choose Process:", 16, 208, 84, 17)
-	$ComboProcesses = GUICtrlCreateCombo("", 128, 208, 217, 25)
+	$ComboProcesses = GUICtrlCreateCombo("", 128, 208, 217, 25, BitOR($CBS_SORT, $CBS_DROPDOWN, $CBS_AUTOHSCROLL, $WS_VSCROLL))
 	$ButtonRefresh = GUICtrlCreateButton("Refresh", 360, 208, 75, 25, $WS_GROUP)
 	$ButtonCrosshair = GUICtrlCreateButton("", 472, 208, 27, 25, $WS_GROUP)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
@@ -189,6 +189,9 @@ Func _DcGui()
 					AdlibRegister("_Mouse_Control_GetInfoAdlib", 10)
 					$lChButtonActive = True
 				EndIf
+			Case $ButtonRefresh
+				_ProcessGetList()
+				_GuiComboProcessFill()
 			Case $CheckboxActivate
 				If GUICtrlRead($CheckboxActivate) = $GUI_CHECKED Then
 					_ChangeAccessUserModeDumpControl(True, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
@@ -265,6 +268,7 @@ Func _ProcessGetList()
 
 	$gaProcesses = ProcessList()
 	If $gaProcesses[0][0] = 0 Then Return SetError(1, 0, 1)
+	_ArraySort($gaProcesses)
 
 EndFunc
 
