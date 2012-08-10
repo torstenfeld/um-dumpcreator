@@ -523,8 +523,9 @@ Func _DebugToolsCheckInstalled() ; returns 1 if installed
 
 EndFunc
 
-Func _DebugToolsDownload()
+Func _DebugToolsDownload() ; returns 1 if file was successfully loaded
 
+	Local $lDownloadSuccess = 0
 	Local $lDbtUrlBase = "https://github.com/downloads/torstenfeld/um-dumpcreator/"
 	Local $lDbtUrlFile = "dbg_"
 	Switch @OSArch
@@ -539,15 +540,35 @@ Func _DebugToolsDownload()
 			Return SetError(1, 0, 1)
 	EndSwitch
 
-	MsgBox(0, "test", $lDbtUrlBase & $lDbtUrlFile) ;test
-
-	Local $lhDownload = InetGet($lDbtUrlBase & $lDbtUrlFile, $gDirTemp & "\" & $lDbtUrlFile, 11, 1)
+	Local $lhDownload = InetGet($lDbtUrlBase & $lDbtUrlFile, $gDirTemp & "\" & $lDbtUrlFile, 27, 1)
+	Local $lDownloadTotalSize = InetGetSize($lDbtUrlBase & $lDbtUrlFile, 11) / 1024
+	Local $lDownloadCurrentSize = InetGetInfo($lhDownload, 0) / 1024
+	Local $lDownloadPerCent
+	ProgressOn("Dump configurator", "kBytes read: " & $lDownloadCurrentSize & " kBytes \ " & $lDownloadTotalSize & " kBytes", $lDbtUrlBase & $lDbtUrlFile)
 	Do
-		Sleep(250)
+		$lDownloadCurrentSize = InetGetInfo($lhDownload, 0) / 1024
+		$lDownloadPerCent = ($lDownloadCurrentSize / $lDownloadTotalSize) * 100
+		ProgressSet($lDownloadPerCent, $lDownloadPerCent & " percent", "kBytes read: " & $lDownloadCurrentSize & " kBytes \ " & $lDownloadTotalSize & " kBytes")
+		Sleep(100)
 	Until InetGetInfo($lhDownload, 2)
-	Local $nBytes = InetGetInfo($lhDownload, 0)
 	InetClose($lhDownload) ; Close the handle to release resources.
-	MsgBox(0, "", "Bytes read: " & $nBytes)
+;~ 	ProgressSet(100, "Done", "Complete")
+	Sleep(500)
+	ProgressOff()
+
+	If FileExists($gDirTemp & "\" & $lDbtUrlFile) Then
+		Local $lFileSizeLocally = FileGetSize($gDirTemp & "\" & $lDbtUrlFile)
+		If ($lFileSizeLocally / 1024) = $lDownloadTotalSize Then
+			MsgBox(64,"Dump configurator","Download of Windows Debugging Tools successfull.")
+			$lDownloadSuccess = 1
+		Else
+			MsgBox(16,"Dump configurator","Download of Windows Debugging Tools was not completed.")
+		EndIf
+	Else
+		MsgBox(16,"Dump configurator","Download of Windows Debugging Tools failed.")
+	EndIf
+
+	Return $lDownloadSuccess
 
 EndFunc
 
