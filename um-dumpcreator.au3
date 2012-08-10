@@ -77,6 +77,9 @@
 
 Func _DcMain()
 
+	_DebugToolsCheckInstalled()
+	Exit ;test
+
 	_CheckForUpdate()
 	_ProcessGetList()
 
@@ -496,6 +499,26 @@ Func _IniFileGetValues()
 	$gaRegUserDumpValues[1] = IniRead($gFileIniValuesSave, "values", "folder", "")
 	$gaRegUserDumpValues[2] = IniRead($gFileIniValuesSave, "values", "count", "")
 	$gaRegUserDumpValues[3] = IniRead($gFileIniValuesSave, "values", "type", "")
+
+EndFunc
+
+Func _DebugToolsCheckInstalled() ; returns 1 if installed
+
+	Local $lRegUninstallBase = "HKLM\SOFTWARE\"
+	If @OSArch = "X64" Then $lRegUninstallBase &= "Wow6432Node\"
+	$lRegUninstallBase &= "Microsoft\Windows\CurrentVersion\Uninstall\"
+
+	Local $lDbgToolsFound = 0
+	Local $lRegSubKey, $lRegValue
+
+	For $i = 1 To 9999999999
+		$lRegSubKey = RegEnumKey($lRegUninstallBase, $i)
+		If @error <> 0 Then ExitLoop
+		$lRegValue = RegRead($lRegUninstallBase & $lRegSubKey, "DisplayName")
+		If StringInStr($lRegValue, "Debugging Tools for Windows") Then $lDbgToolsFound = 1
+	Next
+
+	Return $lDbgToolsFound
 
 EndFunc
 
