@@ -51,6 +51,7 @@
 
 	Global $gaProcesses
 	Global $gPreVista = False
+	Global $gInstalledDebuggingTools
 
 	Global $pos1 = MouseGetPos()
 	Global $pos2 = MouseGetPos() ; must be initialized
@@ -514,11 +515,16 @@ Func _DebugToolsMain()
 		Select
 ;~ 			Case $iMsgBoxAnswer = 6 ;Yes
 			Case $iMsgBoxAnswer = 7 ;No
+				$gInstalledDebuggingTools = False
 				Return SetError(1, 0, 0)
 		EndSelect
 	EndIf
 	Local $lMsiToInstall = _DebugToolsDownload()
-	_DebugToolsInstall($lMsiToInstall)
+	If _DebugToolsInstall($lMsiToInstall) Then
+		$gInstalledDebuggingTools = True
+	Else
+		$gInstalledDebuggingTools = False
+	EndIf
 
 EndFunc
 
