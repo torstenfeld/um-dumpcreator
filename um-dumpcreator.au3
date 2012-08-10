@@ -78,6 +78,7 @@
 Func _DcMain()
 
 	_DebugToolsCheckInstalled()
+	_DebugToolsDownload()
 	Exit ;test
 
 	_CheckForUpdate()
@@ -519,6 +520,34 @@ Func _DebugToolsCheckInstalled() ; returns 1 if installed
 	Next
 
 	Return $lDbgToolsFound
+
+EndFunc
+
+Func _DebugToolsDownload()
+
+	Local $lDbtUrlBase = "https://github.com/downloads/torstenfeld/um-dumpcreator/"
+	Local $lDbtUrlFile = "dbg_"
+	Switch @OSArch
+		Case "X64"
+			$lDbtUrlFile &= "amd64.msi"
+		Case "X86"
+			$lDbtUrlFile &= "x86.msi"
+		Case "IA64"
+			$lDbtUrlFile &= "ia64.msi"
+		Case Else
+			MsgBox(16,"Dump Configurator","Your OS architecture is not supported. " & @CRLF & "Windows Debugging Tools will not be installed.",15)
+			Return SetError(1, 0, 1)
+	EndSwitch
+
+	MsgBox(0, "test", $lDbtUrlBase & $lDbtUrlFile) ;test
+
+	Local $lhDownload = InetGet($lDbtUrlBase & $lDbtUrlFile, $gDirTemp & "\" & $lDbtUrlFile, 11, 1)
+	Do
+		Sleep(250)
+	Until InetGetInfo($lhDownload, 2)
+	Local $nBytes = InetGetInfo($lhDownload, 0)
+	InetClose($lhDownload) ; Close the handle to release resources.
+	MsgBox(0, "", "Bytes read: " & $nBytes)
 
 EndFunc
 
