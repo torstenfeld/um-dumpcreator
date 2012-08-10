@@ -99,6 +99,7 @@ AutoItSetOption("TrayIconDebug", 1)
 Func _DcMain()
 
 	_WriteDebug("INFO;_DcMain;_DcMain started")
+	_PageFileGetActualSize()
 	_ArchCheck()
 
 	If @Compiled Then
@@ -110,7 +111,6 @@ Func _DcMain()
 		_WriteDebug("INFO;_DcMain;Not compiled - Version " & $gVersion)
 	EndIf
 
-	_CheckForUpdate()
 
 	_WriteDebug("INFO;_DcMain;$gDirProgramFilesx86: " & $gDirProgramFilesx86)
 	_WriteDebug("INFO;_DcMain;$gDirProgramFilesx64: " & $gDirProgramFilesx64)
@@ -124,9 +124,7 @@ Func _DcMain()
 	_OsCheckPreVista() ;test
 ;~ 	$gPreVista = True ;test
 
-	_RegistryGetValues()
-;~ 	_ArrayDisplay($gaRegUserDumpValues, "$gaRegUserDumpValues")
-	_DcGui()
+;~ 	_DcGui()
 
 EndFunc
 
@@ -1251,6 +1249,22 @@ Func _ProcessIsWow64($hProcess)
 	EndIf
 	_WriteDebug("INFO;_ProcessIsWow64;returning " & $aRet[2])
 	Return $aRet[2]	; non-zero = Wow64, 0 = not
+EndFunc
+
+Func _PageFileGetActualSize()
+;~ 	HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management
+
+	Local $lSum = 0
+
+	$lRegReadResult = RegRead("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management", "PagingFiles")
+	$laRegReadResult = StringSplit($lRegReadResult, @LF)
+	For $i = 1 To $laRegReadResult[0]
+;~ 		$laRegReadResult[$i] = StringRegExpReplace($laRegReadResult[$i], ".*\s\d*\s(\d*).*", "$1")
+		$lSum += StringRegExpReplace($laRegReadResult[$i], ".*\s\d*\s(\d*).*", "$1")
+	Next
+	_ArrayDisplay($laRegReadResult, "$laRegReadResult")
+	MsgBox(0, "test", "$lSum: " & $lSum)
+	
 EndFunc
 
 ; ===================================================================================================================
