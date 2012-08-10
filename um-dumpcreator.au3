@@ -78,14 +78,14 @@
 
 Func _DcMain()
 
-	_DebugToolsMain()
-	Exit ;test
-
 	_CheckForUpdate()
+
+	_DebugToolsMain()
+
 	_ProcessGetList()
 
-;~ 	_OsCheckPreVista() ;test
-	$gPreVista = True ;test
+	_OsCheckPreVista() ;test
+;~ 	$gPreVista = True ;test
 
 	_RegistryGetValues()
 ;~ 	_ArrayDisplay($gaRegUserDumpValues, "$gaRegUserDumpValues")
@@ -506,7 +506,7 @@ EndFunc
 Func _DebugToolsMain()
 
 	If _DebugToolsCheckInstalled() Then
-		MsgBox(64, "Dump Configurator", "Windows Debugging Tools are already installed. Skipping installation.") ;test
+;~ 		MsgBox(64, "Dump Configurator", "Windows Debugging Tools are already installed. Skipping installation.") ;test
 		Return 1
 	Else
 		If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
@@ -524,9 +524,9 @@ EndFunc
 
 Func _DebugToolsCheckInstalled() ; returns 1 if installed
 
-	Local $lRegUninstallBase = "HKLM\SOFTWARE\"
-	If @OSArch = "X64" Then $lRegUninstallBase &= "Wow6432Node\"
-	$lRegUninstallBase &= "Microsoft\Windows\CurrentVersion\Uninstall\"
+	Local $lRegUninstallBase = "HKLM"
+	If @OSArch = "X64" Then $lRegUninstallBase &= "64"
+	$lRegUninstallBase &= "\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
 
 	Local $lDbgToolsFound = 0
 	Local $lRegSubKey, $lRegValue
@@ -535,7 +535,10 @@ Func _DebugToolsCheckInstalled() ; returns 1 if installed
 		$lRegSubKey = RegEnumKey($lRegUninstallBase, $i)
 		If @error <> 0 Then ExitLoop
 		$lRegValue = RegRead($lRegUninstallBase & $lRegSubKey, "DisplayName")
-		If StringInStr($lRegValue, "Debugging Tools for Windows") Then $lDbgToolsFound = 1
+		If StringInStr($lRegValue, "Debugging Tools for Windows") Then
+			$lDbgToolsFound = 1
+			ExitLoop
+		EndIf
 	Next
 
 	Return $lDbgToolsFound
