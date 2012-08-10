@@ -1,11 +1,11 @@
 #RequireAdmin
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_icon=favicon.ico
-#AutoIt3Wrapper_outfile=dumpconfigurator-0.0.0.7.exe
+#AutoIt3Wrapper_outfile=dumpconfigurator-0.0.0.8.exe
 #AutoIt3Wrapper_UseX64=n
 #AutoIt3Wrapper_Res_Comment=Sets registry settings for automatic creation of user dumps
 #AutoIt3Wrapper_Res_Description=Sets registry settings for automatic creation of user dumps
-#AutoIt3Wrapper_Res_Fileversion=0.0.0.7
+#AutoIt3Wrapper_Res_Fileversion=0.0.0.8
 #AutoIt3Wrapper_Res_LegalCopyright=Copyright © 2011 Torsten Feld - All rights reserved.
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 
@@ -185,7 +185,19 @@ Func _DcGui()
 		GUICtrlSetState($ButtonMicrosoft, $GUI_DISABLE)
 	EndIf
 
-	_GuiComboProcessFill()
+	If Not $gInstalledDebuggingTools Then
+		GUICtrlSetState($CheckboxActivate, $GUI_DISABLE)
+		GUICtrlSetState($ComboProcesses, $GUI_DISABLE)
+		GUICtrlSetState($ButtonRefresh, $GUI_DISABLE)
+		GUICtrlSetState($ButtonCrosshair, $GUI_DISABLE)
+		GUICtrlSetState($RadioUserCrash, $GUI_DISABLE)
+		GUICtrlSetState($RadioUserHang, $GUI_DISABLE)
+		GUICtrlSetState($InputUserLocation, $GUI_DISABLE)
+		GUICtrlSetState($ButtonUserBrowse, $GUI_DISABLE)
+		GUICtrlSetState($ButtonUserCreateDump, $GUI_DISABLE)
+	Else
+		_GuiComboProcessFill()
+	EndIf
 
 	While 1
 		$nMsg = GUIGetMsg()
@@ -508,6 +520,7 @@ Func _DebugToolsMain()
 
 	If _DebugToolsCheckInstalled() Then
 ;~ 		MsgBox(64, "Dump Configurator", "Windows Debugging Tools are already installed. Skipping installation.") ;test
+		$gInstalledDebuggingTools = True
 		Return 1
 	Else
 		If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
