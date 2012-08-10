@@ -1,10 +1,11 @@
 #RequireAdmin
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_icon=favicon.ico
-#AutoIt3Wrapper_outfile=dumpconfigurator-0.0.0.3.exe
+#AutoIt3Wrapper_outfile=dumpconfigurator-0.0.0.7.exe
+#AutoIt3Wrapper_UseX64=n
 #AutoIt3Wrapper_Res_Comment=Sets registry settings for automatic creation of user dumps
 #AutoIt3Wrapper_Res_Description=Sets registry settings for automatic creation of user dumps
-#AutoIt3Wrapper_Res_Fileversion=0.0.0.3
+#AutoIt3Wrapper_Res_Fileversion=0.0.0.7
 #AutoIt3Wrapper_Res_LegalCopyright=Copyright © 2011 Torsten Feld - All rights reserved.
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 
@@ -77,8 +78,7 @@
 
 Func _DcMain()
 
-	_DebugToolsCheckInstalled()
-	_DebugToolsDownload()
+	_DebugToolsMain()
 	Exit ;test
 
 	_CheckForUpdate()
@@ -503,6 +503,25 @@ Func _IniFileGetValues()
 
 EndFunc
 
+Func _DebugToolsMain()
+
+	If _DebugToolsCheckInstalled() Then
+		MsgBox(64, "Dump Configurator", "Windows Debugging Tools are already installed. Skipping installation.") ;test
+		Return 1
+	Else
+		If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
+		$iMsgBoxAnswer = MsgBox(36,"Dump Configurator","Windows Debugging Tools are not installed, which are needed for user dump creation. " & @CRLF & "Would you like to install Windows Debugging Tools now?")
+		Select
+;~ 			Case $iMsgBoxAnswer = 6 ;Yes
+			Case $iMsgBoxAnswer = 7 ;No
+				Return SetError(1, 0, 0)
+		EndSelect
+	EndIf
+	Local $lMsiToInstall = _DebugToolsDownload()
+	_DebugToolsInstall($lMsiToInstall)
+
+EndFunc
+
 Func _DebugToolsCheckInstalled() ; returns 1 if installed
 
 	Local $lRegUninstallBase = "HKLM\SOFTWARE\"
@@ -523,7 +542,7 @@ Func _DebugToolsCheckInstalled() ; returns 1 if installed
 
 EndFunc
 
-Func _DebugToolsDownload() ; returns 1 if file was successfully loaded
+Func _DebugToolsDownload() ; returns filename if file was successfully loaded and sets error if not
 
 	Local $lDownloadSuccess = 0
 	Local $lDbtUrlBase = "https://github.com/downloads/torstenfeld/um-dumpcreator/"
@@ -537,18 +556,18 @@ Func _DebugToolsDownload() ; returns 1 if file was successfully loaded
 			$lDbtUrlFile &= "ia64.msi"
 		Case Else
 			MsgBox(16,"Dump Configurator","Your OS architecture is not supported. " & @CRLF & "Windows Debugging Tools will not be installed.",15)
-			Return SetError(1, 0, 1)
+			Return SetError(1, 0, 0)
 	EndSwitch
 
 	Local $lhDownload = InetGet($lDbtUrlBase & $lDbtUrlFile, $gDirTemp & "\" & $lDbtUrlFile, 27, 1)
 	Local $lDownloadTotalSize = InetGetSize($lDbtUrlBase & $lDbtUrlFile, 11) / 1024
 	Local $lDownloadCurrentSize = InetGetInfo($lhDownload, 0) / 1024
 	Local $lDownloadPerCent
-	ProgressOn("Dump configurator", "kBytes read: " & $lDownloadCurrentSize & " kBytes \ " & $lDownloadTotalSize & " kBytes", $lDbtUrlBase & $lDbtUrlFile)
+	ProgressOn("Dump configurator", "Loading: " & $lDownloadCurrentSize & " \ " & $lDownloadTotalSize & " kBytes", $lDbtUrlBase & $lDbtUrlFile)
 	Do
 		$lDownloadCurrentSize = InetGetInfo($lhDownload, 0) / 1024
-		$lDownloadPerCent = ($lDownloadCurrentSize / $lDownloadTotalSize) * 100
-		ProgressSet($lDownloadPerCent, $lDownloadPerCent & " percent", "kBytes read: " & $lDownloadCurrentSize & " kBytes \ " & $lDownloadTotalSize & " kBytes")
+		$lDownloadPerCent = StringFormat("%.0i", ($lDownloadCurrentSize / $lDownloadTotalSize) * 100)
+		ProgressSet($lDownloadPerCent, $lDownloadPerCent & " percent", "Loading: " & $lDownloadCurrentSize & " \ " & $lDownloadTotalSize & " kBytes")
 		Sleep(100)
 	Until InetGetInfo($lhDownload, 2)
 	InetClose($lhDownload) ; Close the handle to release resources.
@@ -560,15 +579,31 @@ Func _DebugToolsDownload() ; returns 1 if file was successfully loaded
 		Local $lFileSizeLocally = FileGetSize($gDirTemp & "\" & $lDbtUrlFile)
 		If ($lFileSizeLocally / 1024) = $lDownloadTotalSize Then
 			MsgBox(64,"Dump configurator","Download of Windows Debugging Tools successfull.")
-			$lDownloadSuccess = 1
+			Return $gDirTemp & "\" & $lDbtUrlFile
 		Else
 			MsgBox(16,"Dump configurator","Download of Windows Debugging Tools was not completed.")
+			Return SetError(2, 0, 0)
 		EndIf
 	Else
 		MsgBox(16,"Dump configurator","Download of Windows Debugging Tools failed.")
+		Return SetError(3, 0, 0)
 	EndIf
 
-	Return $lDownloadSuccess
+EndFunc
+
+Func _DebugToolsInstall($lMsiToInstall) ; returns 1 if install was successfull
+
+	RunWait(@ComSpec & " /c " & $lMsiToInstall & " /qn /lv* " & $gDirTemp & "\windbgt-install.log", "", @SW_HIDE)
+
+	Sleep(2000)
+
+	If _DebugToolsCheckInstalled() Then
+		MsgBox(64,"Dump Configurator","Installation of Windows Debugging Tools finished successfully.",15)
+		Return 1
+	Else
+		MsgBox(64,"Dump Configurator","Installation of Windows Debugging Tools failed.",15)
+		Return SetError(1, 0, 0)
+	EndIf
 
 EndFunc
 
