@@ -1,26 +1,40 @@
 #RequireAdmin
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
-#AutoIt3Wrapper_icon=favicon.ico
-#AutoIt3Wrapper_outfile=dumpconfigurator-0.0.0.3.exe
+#AutoIt3Wrapper_Icon=favicon.ico
+#AutoIt3Wrapper_Outfile=dumpconfigurator-0.0.0.10-x86.exe
+#AutoIt3Wrapper_Outfile_x64=dumpconfigurator-0.0.0.10-x64.exe
+#AutoIt3Wrapper_Compile_Both=y
 #AutoIt3Wrapper_Res_Comment=Sets registry settings for automatic creation of user dumps
 #AutoIt3Wrapper_Res_Description=Sets registry settings for automatic creation of user dumps
-#AutoIt3Wrapper_Res_Fileversion=0.0.0.3
+#AutoIt3Wrapper_Res_Fileversion=0.0.0.10
 #AutoIt3Wrapper_Res_LegalCopyright=Copyright © 2011 Torsten Feld - All rights reserved.
+#AutoIt3Wrapper_Res_requestedExecutionLevel=requireAdministrator
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 
 
 #region ### includes
 
 	#include <ButtonConstants.au3>
+	#include <ComboConstants.au3>
 	#include <EditConstants.au3>
 	#include <GUIConstantsEx.au3>
 	#include <StaticConstants.au3>
 	#include <WindowsConstants.au3>
+	#include <WinAPI.au3>
+
+	#include <GuiComboBox.au3>
+
+	#Include <File.au3>
 	#Include <String.au3>
 	#include <INet.au3>
 	#Include <Misc.au3>
 
 	#include <Array.au3>
+
+	#include ".\incs\APIErrors.au3"
+	#include ".\incs\NTErrors.au3"
+	#include ".\incs\APIConstants.au3"
+	#include ".\incs\WinAPIEx.au3"
 
 #endregion
 
@@ -33,13 +47,35 @@
 	Global $gaRegUserDumpValuesNew[4] ; active, folder, count, type
 
 	Global $gDirTemp = @TempDir & "\dumpconfigurator"
+	Global $gDirUserManualDump
 	Global $gFileIniValuesSave = $gDirTemp & "\savedvalues.ini"
 
-	Global $gVersion = "0.0.0.3"
+	Global $gUrlDownloadTool = "https://github.com/torstenfeld/um-dumpcreator/downloads"
+
+	Global $gVersion
+
+	Global $gaProcesses
+	Global $gPreVista = False
+	Global $gInstalledDebuggingTools
+	Global $gDirDebuggingTools
+
+	Global $pos1 = MouseGetPos()
+	Global $pos2 = MouseGetPos() ; must be initialized
+	Global $appHandle = 0
+
+	Global $gProcess
+	Global $gProcCmdLine
+	Global $gToolTipTxt
+	Global $gProcessCrashed
+
+	Global $ComboProcesses
 
 #endregion
 
 #region ### main
+
+;~ 	AutoItSetOption("MustDeclareVars", 1)
+	AutoItSetOption("MouseCoordMode", 1)
 
 	If Not FileExists($gDirTemp) Then DirCreate($gDirTemp)
 
@@ -49,9 +85,25 @@
 
 Func _DcMain()
 
+
+	_ArchCheck()
+
+	If @Compiled Then
+		$gVersion = FileGetVersion(@ScriptFullPath, "FileVersion")
+		If @error Then $gVersion = "0.0.0.0"
+	Else
+		$gVersion = "9.99.99.99 - not compiled"
+	EndIf
+
 	_CheckForUpdate()
 
-	_OsCheckPreVista()
+	_DebugToolsMain()
+	_DebugToolsGetInstallFolder()
+
+	_ProcessGetList()
+
+	_OsCheckPreVista() ;test
+;~ 	$gPreVista = True ;test
 
 	_RegistryGetValues()
 ;~ 	_ArrayDisplay($gaRegUserDumpValues, "$gaRegUserDumpValues")
@@ -59,16 +111,44 @@ Func _DcMain()
 
 EndFunc
 
+Func _ArchCheck()
+
+	Local $lMsgBoxText = ""
+
+	Switch @OSArch
+		Case "X64"
+			If Not @AutoItX64 Then $lMsgBoxText = "The architecture of your OS (" & @OSArch & ") does not match with the architecture of this tool (X86)." & @CRLF
+		Case "X86"
+			If @AutoItX64 Then $lMsgBoxText = "The architecture of your OS (" & @OSArch & ") does not match with the architecture of this tool (X64)." & @CRLF
+	EndSwitch
+
+	If $lMsgBoxText = "" Then Return 1
+
+	Local $iMsgBoxAnswer = MsgBox(52,"Dump configurator", $lMsgBoxText & "Please download the correct version from " & @CRLF & $gUrlDownloadTool & @CRLF & @CRLF & _
+	"Would you like to open the site now?", 15)
+	Select
+		Case $iMsgBoxAnswer = 6 ;Yes
+			ShellExecuteWait($gUrlDownloadTool)
+			Sleep(4000)
+			Exit 0
+		Case $iMsgBoxAnswer = 7 ;No
+			Exit 1
+
+	EndSelect
+
+EndFunc
+
 Func _OsCheckPreVista()
 
 	Switch @OSVersion
 		Case "WIN_XP", "WIN_XPe", "WIN_2000"
-			MsgBox(16,"Dump configurator","Unfortunately, Microsoft Windows below Vista is currently not supported. " & @CRLF & _
-				"Support for those Operating Systems (especially Windows XP) will be added as soon as possible. " & @CRLF & @CRLF & _
-				"Visit https://github.com/torstenfeld/um-dumpcreator for latest news.")
-			Exit 2
+;~ 			MsgBox(16,"Dump configurator","Unfortunately, Microsoft Windows below Vista is currently not supported. " & @CRLF & _
+;~ 				"Support for those Operating Systems (especially Windows XP) will be added as soon as possible. " & @CRLF & @CRLF & _
+;~ 				"Visit https://github.com/torstenfeld/um-dumpcreator for latest news.")
+;~ 			Exit 2
+			$gPreVista = True
 		Case "WIN_2008R2", "WIN_7", "WIN_8", "WIN_2008", "WIN_VISTA", "WIN_2003"
-
+			$gPreVista = False
 		Case Else
 			MsgBox(16,"Dump configurator","Unfortunately, the Operating System you are using currently not supported. " & @CRLF & _
 				"Please write an email to torsten@torsten-feld.de with the following information:" & @CRLF & _
@@ -81,63 +161,135 @@ EndFunc
 
 Func _DcGui()
 
+	Local $lChButtonActive = False
+
 	#Region ### START Koda GUI section ### Form=
-	$FormDcGui = GUICreate("Dump Configurator", 514, 376, 100, 100)
-	$GroupUser = GUICtrlCreateGroup("User Mode", 8, 32, 497, 145)
+	$FormDcGui = GUICreate("Dump Configurator - v" & $gVersion, 518, 522, 214, 131)
+	$GroupUserAutomatic = GUICtrlCreateGroup("User Mode Automatic", 8, 32, 497, 193)
 	$CheckboxActivate = GUICtrlCreateCheckbox("Activate", 16, 48, 97, 17)
-	GUICtrlSetTip(-1, "(De)activate automatic creation of process dumps, if a process crashes", Default, 0, 1)
+	GUICtrlSetTip(-1, "(De)activate automatic creation of process dumps, if a process crashes")
 	$LabelDumpCount = GUICtrlCreateLabel("Dump count", 16, 72, 72, 17)
-	$LabelDumpLocate = GUICtrlCreateLabel("Directory to store:", 16, 96, 72, 17)
-	$LabelDumpType = GUICtrlCreateLabel("Type of dump:", 16, 120, 72, 17)
+	$LabelDumpLocate = GUICtrlCreateLabel("Directory to store:", 16, 104, 72, 17)
+	$LabelDumpType = GUICtrlCreateLabel("Type of dump:", 16, 136, 72, 17)
 	$InputDumpCount = GUICtrlCreateInput("", 128, 72, 185, 21)
-	GUICtrlSetTip(-1, "Sets the number of dumps which will be saved until the oldest dump will be deleted", Default, 0, 1)
-	$InputDumpLocate = GUICtrlCreateInput("", 128, 96, 185, 21)
-	GUICtrlSetTip(-1, "Sets the folder to which the dumps are written", Default, 0, 1)
-	$RadioCustomDump = GUICtrlCreateRadio("Custom dump", 128, 120, 97, 17)
-	GUICtrlSetTip(-1, "", Default, 0, 1)
+	GUICtrlSetTip(-1, "Sets the number of dumps which will be saved until the oldest dump will be deleted")
+	$InputDumpLocate = GUICtrlCreateInput("", 128, 104, 185, 21)
+	GUICtrlSetTip(-1, "Sets the folder to which the dumps are written")
+	$RadioCustomDump = GUICtrlCreateRadio("Custom dump", 128, 136, 97, 17)
 	GUICtrlSetState(-1, $GUI_HIDE)
-	$RadioMiniDump = GUICtrlCreateRadio("Mini dump", 232, 120, 97, 17)
-	GUICtrlSetTip(-1, "Only basic information of the process itself is written to disk", Default, 0, 1)
-	$RadioFullDump = GUICtrlCreateRadio("Full dump", 336, 120, 89, 17)
-	GUICtrlSetTip(-1, "Whole memory of the process is written to disk", Default, 0, 1)
-	$ButtonCustomDump = GUICtrlCreateButton("Custom dump", 128, 144, 75, 25, $WS_GROUP)
-	GUICtrlSetTip(-1, "", Default, 0, 1)
+	$RadioMiniDump = GUICtrlCreateRadio("Mini dump", 232, 136, 97, 17)
+	GUICtrlSetTip(-1, "Only basic information of the process itself is written to disk")
+	$RadioFullDump = GUICtrlCreateRadio("Full dump", 336, 136, 89, 17)
+	GUICtrlSetTip(-1, "Whole memory of the process is written to disk")
+	$ButtonCustomDump = GUICtrlCreateButton("Custom dump", 128, 160, 75, 25, $WS_GROUP)
 	GUICtrlSetState(-1, $GUI_HIDE)
-	$ButtonAvira = GUICtrlCreateButton("Avira recommendation", 264, 144, 115, 25, $WS_GROUP)
-	GUICtrlSetTip(-1, "Setting configuration, which is recommended by Avira Userland QA", Default, 0, 1)
-	$ButtonMicrosoft = GUICtrlCreateButton("MS recommendation", 384, 144, 115, 25, $WS_GROUP)
-	GUICtrlSetTip(-1, "Setting configuration, which is recommended by Microsoft for daily work", Default, 0, 1)
+	$ButtonAvira = GUICtrlCreateButton("Avira recommendation", 264, 160, 115, 25, $WS_GROUP)
+	GUICtrlSetTip(-1, "Setting configuration, which is recommended by Avira Userland QA")
+	$ButtonMicrosoft = GUICtrlCreateButton("MS recommendation", 384, 160, 115, 25, $WS_GROUP)
+	GUICtrlSetTip(-1, "Setting configuration, which is recommended by Microsoft for daily work")
+	$ButtonUserABrowse = GUICtrlCreateButton("Browse", 360, 104, 75, 25, $WS_GROUP)
+	$ButtonSave = GUICtrlCreateButton("Save", 424, 192, 75, 25)
+	GUICtrlSetTip(-1, "Configuration is written to registry")
+	$ButtonReset = GUICtrlCreateButton("Reset", 128, 192, 75, 25)
+	GUICtrlSetTip(-1, "On setting a new configuration for the first time, the original config is saved for later restore")
+	$ButtonOpen = GUICtrlCreateButton("Open folder", 208, 192, 75, 25)
+	GUICtrlSetTip(-1, "Opens the folder, where dumps are saved")
+
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
-	$GroupKernel = GUICtrlCreateGroup("Kernel mode", 8, 184, 497, 153)
+	$GroupUserManual = GUICtrlCreateGroup("User Mode Manual", 8, 232, 497, 161)
+	$Label1 = GUICtrlCreateLabel("Choose Process:", 16, 256, 84, 17)
+	$ComboProcesses = GUICtrlCreateCombo("", 128, 256, 217, 25, BitOR($CBS_DROPDOWN,$CBS_AUTOHSCROLL))
+	$ButtonRefresh = GUICtrlCreateButton("Refresh", 360, 256, 75, 25)
+	GUICtrlSetTip(-1, "Refresh the process list")
+	$ButtonCrosshair = GUICtrlCreateButton("", 472, 256, 25, 25)
+	GUICtrlSetTip(-1, "Click to get process by windows")
+	$Label2 = GUICtrlCreateLabel("Type of dump:", 16, 320, 72, 17)
+	GUIStartGroup()
+	$RadioUserCrash = GUICtrlCreateRadio("Crash", 128, 320, 89, 17)
+	GUICtrlSetTip(-1, "Select if you would like to get a dump of a crashed process")
+	GUICtrlSetState(-1, $GUI_CHECKED)
+	$RadioUserHang = GUICtrlCreateRadio("Hang", 224, 320, 113, 17)
+	GUICtrlSetTip(-1, "Select if you would like to get a dump of a hanging process")
+	$Label3 = GUICtrlCreateLabel("Dump location:", 16, 288, 75, 17)
+	$InputUserLocation = GUICtrlCreateInput("", 128, 288, 185, 21)
+	GUICtrlSetTip(-1, "Specify the folder where the dumps should be saved")
+	$ButtonUserBrowse = GUICtrlCreateButton("Browse", 360, 288, 75, 25)
+	GUICtrlSetTip(-1, "Click to browse for the folder where the dumps should be saved")
+	$Label4 = GUICtrlCreateLabel("Process existing:", 16, 352, 83, 17)
+	GUIStartGroup()
+	$RadioProcessExists = GUICtrlCreateRadio("Existing", 128, 352, 89, 17)
+	GUICtrlSetState(-1, $GUI_CHECKED)
+	GUICtrlSetTip(-1, "Select if the process has already crashed")
+	$RadioProcessWaiting = GUICtrlCreateRadio("Waiting for", 224, 352, 113, 17)
+	GUICtrlSetTip(-1, "Select if the process is currently not running")
+	$ButtonUserCreateDump = GUICtrlCreateButton("Create dump", 360, 352, 75, 25)
+	GUICtrlSetTip(-1, "Click to start dump creation")
+
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
-	$ButtonReset = GUICtrlCreateButton("Reset", 8, 344, 75, 25, $WS_GROUP)
-	GUICtrlSetTip(-1, "On setting a new configuration for the first time, the original config is saved for later restore", Default, 0, 1)
-	$ButtonOpen = GUICtrlCreateButton("Open folder", 88, 344, 75, 25, $WS_GROUP)
-	GUICtrlSetTip(-1, "Opens the folder, where dumps are saved", Default, 0, 1)
-	$ButtonCancel = GUICtrlCreateButton("Cancel", 352, 344, 75, 25, $WS_GROUP)
-	GUICtrlSetTip(-1, "Quits the tool", Default, 0, 1)
-	$ButtonOk = GUICtrlCreateButton("Ok", 432, 344, 75, 25, $WS_GROUP)
-	GUICtrlSetTip(-1, "Configuration is written to registry", Default, 0, 1)
+	$GroupKernel = GUICtrlCreateGroup("Kernel mode", 8, 400, 497, 81)
+
+	GUICtrlCreateGroup("", -99, -99, 1, 1)
+	$ButtonCancel = GUICtrlCreateButton("Cancel", 432, 488, 75, 25)
+	GUICtrlSetTip(-1, "Quits the tool")
+
 	GUISetState(@SW_SHOW)
 	#EndRegion ### END Koda GUI section ###
+
 
 	If Not FileExists($gFileIniValuesSave) Then GUICtrlSetState($ButtonReset, $GUI_DISABLE)
 	_SetValuesToUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 
 	If GUICtrlRead($CheckboxActivate) <> $GUI_CHECKED Then _ChangeAccessUserModeDumpControl(False, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 
+	If $gPreVista Then
+		_ChangeAccessUserModeDumpControl(False, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
+		GUICtrlSetState($CheckboxActivate, $GUI_DISABLE)
+		GUICtrlSetState($ButtonAvira, $GUI_DISABLE)
+		GUICtrlSetState($ButtonMicrosoft, $GUI_DISABLE)
+	EndIf
+
+	If Not $gInstalledDebuggingTools Then
+		GUICtrlSetState($CheckboxActivate, $GUI_DISABLE)
+		GUICtrlSetState($ComboProcesses, $GUI_DISABLE)
+		GUICtrlSetState($ButtonRefresh, $GUI_DISABLE)
+		GUICtrlSetState($ButtonCrosshair, $GUI_DISABLE)
+		GUICtrlSetState($RadioUserCrash, $GUI_DISABLE)
+		GUICtrlSetState($RadioUserHang, $GUI_DISABLE)
+		GUICtrlSetState($InputUserLocation, $GUI_DISABLE)
+		GUICtrlSetState($ButtonUserBrowse, $GUI_DISABLE)
+		GUICtrlSetState($ButtonUserCreateDump, $GUI_DISABLE)
+	Else
+		_GuiComboProcessFill()
+	EndIf
+
+	GUICtrlSetData($InputUserLocation, IniRead($gFileIniValuesSave, "UserModeManual", "DumpLocation", ""))
+
 	While 1
 		$nMsg = GUIGetMsg()
 		Switch $nMsg
 			Case $GUI_EVENT_CLOSE, $ButtonCancel
 				Exit
+			Case $ButtonCrosshair
+				If $lChButtonActive Then
+					AdlibUnRegister("_Mouse_Control_GetInfoAdlib")
+					ToolTip("")
+					$lChButtonActive = False
+				Else
+					_ProcessGetList()
+					_GuiComboProcessFill()
+					AdlibRegister("_Mouse_Control_GetInfoAdlib", 10)
+					$lChButtonActive = True
+				EndIf
+			Case $ButtonRefresh
+				_ProcessGetList()
+				_GuiComboProcessFill()
 			Case $CheckboxActivate
 				If GUICtrlRead($CheckboxActivate) = $GUI_CHECKED Then
 					_ChangeAccessUserModeDumpControl(True, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 				Else
 					_ChangeAccessUserModeDumpControl(False, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 				EndIf
-			Case $ButtonOk
+			Case $ButtonSave
 				If Not _CheckBackupIniFileValues() Then _SaveValuesToIniFile() ; returns 1 if backup has already been made
 				GUICtrlSetState($ButtonReset, $GUI_ENABLE)
 				_GetValuesFromUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
@@ -149,6 +301,16 @@ Func _DcGui()
 				_RegistryGetValues()
 				_SetValuesToUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 				MsgBox(64,"Dump configurator","The new configuration has been written to registry.",15)
+			Case $ButtonUserABrowse
+				$lFolderDump = GUICtrlRead($InputDumpLocate)
+				If StringInStr($lFolderDump, "%") Then
+					$lTempStringBetweenResult = StringRegExpReplace($lFolderDump, ".*\%(.*)\%.*", "$1")
+					$lFolderDump = StringReplace($lFolderDump, "%" & $lTempStringBetweenResult & "%", EnvGet($lTempStringBetweenResult))
+				EndIf
+				If Not FileExists($lFolderDump) Then $lFolderDump = @ScriptDir
+				$lFolderDump = FileSelectFolder("Please choose a directoy to store the dumps", "", 7, $lFolderDump, $FormDcGui)
+				If @error Then ContinueLoop
+				GUICtrlSetData($InputDumpLocate, $lFolderDump)
 			Case $ButtonAvira
 				GUICtrlSetState($CheckboxActivate, $GUI_CHECKED)
 				GUICtrlSetData($InputDumpCount, 10)
@@ -183,6 +345,61 @@ Func _DcGui()
 ;~ 						Case $iMsgBoxAnswer = 7 ;No
 					EndSelect
 				EndIf
+			Case $ButtonUserBrowse
+				$gDirUserManualDump = GUICtrlRead($InputUserLocation)
+				If Not FileExists($gDirUserManualDump) Then $gDirUserManualDump = @ScriptDir
+				$gDirUserManualDump = FileSelectFolder("Please choose a directoy to store the dumps", "", 7, $gDirUserManualDump, $FormDcGui)
+				If @error Then ContinueLoop
+				GUICtrlSetData($InputUserLocation, $gDirUserManualDump)
+			Case $ButtonUserCreateDump
+				IniWrite($gFileIniValuesSave, "UserModeManual", "DumpLocation", GUICtrlRead($InputUserLocation))
+				If GUICtrlRead($ComboProcesses) = "" Then
+					If GUICtrlRead($RadioProcessExists) = $GUI_CHECKED Then
+						MsgBox(0, "error", "error")
+						ContinueLoop
+					EndIf
+				EndIf
+				If Not FileExists(GUICtrlRead($InputUserLocation)) Then
+					MsgBox(0, "error", "error")
+					ContinueLoop
+				EndIf
+				Local $lFileAdPlus = $gDirDebuggingTools & "\adplus.exe"
+
+				If GUICtrlRead($RadioUserCrash) = $GUI_CHECKED Then
+					$lAdPlusParameters = " -Crash"
+				Else
+					$lAdPlusParameters = " -Hang"
+				EndIf
+				If GUICtrlRead($RadioProcessExists) = $GUI_CHECKED Then
+					$lAdPlusParameters &= " -p " & StringRegExpReplace(GUICtrlRead($ComboProcesses), ".*\((\d*)\).*", "$1")
+				Else
+					;InputBox features: Title=Yes, Prompt=Yes, Default Text=No
+					If Not IsDeclared("sInputBoxAnswer") Then Local $sInputBoxAnswer
+					$sInputBoxAnswer = InputBox("Dump configurator","Please enter the name of the process (without path)" & @CRLF & @CRLF & " e.g. notepad.exe","","","-1","-1")
+					Switch @Error
+						Case 0 ;OK - The string returned is valid
+							$lAdPlusParameters &= " -pmn " & $sInputBoxAnswer
+						Case Else ;any error
+							MsgBox(0, "test", "InputBox error: " & @error) ;test
+							ContinueLoop
+					EndSwitch
+				EndIf
+				 $lAdPlusParameters &= ' -o "' & GUICtrlRead($InputUserLocation) & _
+					'" -FullOnFirst -lcqd'
+;~ 					'" -FullOnFirst -CTCFB'
+
+;~ 				Run(@ComSpec & ' /c ' & FileGetShortName($lFileAdPlus) & $lAdPlusParameters);, @SW_HIDE)
+				Local $lOutputRun = Run(FileGetShortName($lFileAdPlus) & $lAdPlusParameters);, @SW_MAXIMIZE, $STDERR_CHILD + $STDOUT_CHILD)
+
+				If GUICtrlRead($RadioProcessWaiting) = $GUI_CHECKED Then MsgBox(64,"Dump configurator","After the crash occured, please close the crashed window and close the DOS box which just opened with <ENTER>.",10)
+
+				ProcessWaitClose("adplus.exe")
+				MsgBox(0, "test", "dump successfully created") ;test
+			Case $RadioProcessWaiting
+				GUICtrlSetState($ComboProcesses, $GUI_DISABLE)
+			Case $RadioProcessExists
+				GUICtrlSetState($ComboProcesses, $GUI_ENABLE)
+
 		EndSwitch
 	WEnd
 
@@ -202,6 +419,150 @@ Func _ChangeAccessUserModeDumpControl($lActivate, ByRef $InputDumpCount, ByRef $
 		GUICtrlSetState($RadioFullDump, $GUI_DISABLE)
 	EndIf
 EndFunc
+
+Func _ProcessGetList()
+
+	$gaProcesses = ProcessList()
+	If $gaProcesses[0][0] = 0 Then Return SetError(1, 0, 1)
+	_ArraySort($gaProcesses, 0, 1)
+
+EndFunc
+
+Func _GuiComboProcessFill()
+	_GUICtrlComboBox_ResetContent($ComboProcesses)
+	_GUICtrlComboBox_BeginUpdate($ComboProcesses)
+	For $i = 1 To $gaProcesses[0][0]
+		_GUICtrlComboBox_AddString($ComboProcesses, $gaProcesses[$i][0] & " (" & $gaProcesses[$i][1] & ")")
+	Next
+	_GUICtrlComboBox_EndUpdate($ComboProcesses)
+
+EndFunc
+
+Func _ProcessGetExe($lHandle) ; returns process executable
+
+	Local $lPid = WinGetProcess($lHandle)
+	Local $lArrayResult = _ArraySearch($gaProcesses, $lPid, 0, 0, 0, 0, 1, 1)
+	If @error Then
+		_ProcessGetList()
+		_GuiComboProcessFill()
+		$lArrayResult = _ArraySearch($gaProcesses, $lPid, 0, 0, 0, 0, 1, 1)
+	EndIf
+	Return $gaProcesses[$lArrayResult][0]
+
+EndFunc
+
+Func _Mouse_Control_GetInfoAdlib()
+
+	If _IsPressed(0x01) Then
+		Switch $gProcess
+			Case "WerFault.exe"
+				_GUICtrlComboBox_SelectString($ComboProcesses, $gProcessCrashed)
+			Case Else
+				_GUICtrlComboBox_SelectString($ComboProcesses, $gProcess)
+		EndSwitch
+	EndIf
+
+    $pos1 = MouseGetPos()
+
+    If $pos1[0] <> $pos2[0] Or $pos1[1] <> $pos2[1] Then ; has the mouse moved?
+        Local $a_info = _Mouse_Control_GetInfo()
+        Local $aDLL = DllCall('User32.dll', 'int', 'GetDlgCtrlID', 'hwnd', $a_info[0]) ; get the ID of the control
+        If @error Then Return
+
+;~ 		If @Compiled Then
+;~ 			$lProcessExclude = @ScriptName
+;~ 		Else
+;~ 			$lProcessExclude = "AutoIt3.exe"
+;~ 		EndIf
+;~ 		If _ProcessGetExe($a_info[0]) = $lProcessExclude Then
+		If _ProcessGetExe($a_info[0]) = @AutoItExe Then
+			ToolTip("")
+			Return 0
+		EndIf
+		$gProcess = _ProcessGetExe($a_info[0])
+		$gProcCmdLine = _WinAPI_GetProcessCommandLine(WinGetProcess($a_info[0]))
+
+		$gToolTipTxt = "Proc = " & $gProcess & @CRLF & "ProcCmdLine = " & $gProcCmdLine
+		Switch $gProcess
+			Case "WerFault.exe"
+				$gProcessCrashed = $gaProcesses[_ArraySearch($gaProcesses, StringRegExpReplace($gProcCmdLine, ".*\-p\s(\d*)\s.*", "$1"), 0, 0, 0, 0, 1, 1)][0]
+				$gToolTipTxt &= @CRLF & "Crash in = " & $gProcessCrashed
+		EndSwitch
+
+;~         ToolTip("Handle = " & $a_info[0] & @CRLF & _
+;~ 				"Proc = " & _ProcessGetExe($a_info[0]) & @CRLF & _
+;~ 				"ProcCmdLine = " & _WinAPI_GetProcessCommandLine(WinGetProcess($a_info[0])) & @CRLF & _
+;~                 "Class = " & $a_info[1] & @CRLF & _
+;~                 "ID = " & $aDLL[0] & @CRLF & _
+;~                 "Mouse X Pos = " & $a_info[2] & @CRLF & _
+;~                 "Mouse Y Pos = " & $a_info[3] & @CRLF & _
+;~                 "ClassNN = " & $a_info[4] & @CRLF & _ ; optional
+;~                 "Parent Hwd = " & _WinAPI_GetAncestor($appHandle, $GA_ROOT) & @CRLF & _
+;~                 "Parent Proc = " & _ProcessGetExe(_WinAPI_GetAncestor($appHandle, $GA_ROOT)) & @CRLF & _
+;~                 "Parent CmdLine = " & _WinAPI_GetProcessCommandLine(WinGetProcess(_WinAPI_GetAncestor($appHandle, $GA_ROOT))))
+        ToolTip($gToolTipTxt)
+
+        $pos2 = MouseGetPos()
+
+    EndIf
+
+EndFunc   ;==>_Mouse_Control_GetInfoAdlib
+
+Func _Mouse_Control_GetInfo()
+    Local $client_mpos = $pos1 ; gets client coords because of "MouseCoordMode" = 2
+    Local $a_mpos
+;~  Call to removed due to offset issue $a_mpos = _ClientToScreen($appHandle, $client_mpos[0], $client_mpos[1]) ; $a_mpos now screen coords
+    $a_mpos = $client_mpos
+    $appHandle = GetHoveredHwnd($client_mpos[0], $client_mpos[1]) ; Uses the mouse to do the equivalent of WinGetHandle()
+
+    If @error Then Return SetError(1, 0, 0)
+    Local $a_wfp = DllCall("user32.dll", "hwnd", "WindowFromPoint", "long", $a_mpos[0], "long", $a_mpos[1]) ; gets the control handle
+    If @error Then Return SetError(2, 0, 0)
+
+    Local $t_class = DllStructCreate("char[260]")
+    DllCall("User32.dll", "int", "GetClassName", "hwnd", $a_wfp[0], "ptr", DllStructGetPtr($t_class), "int", 260)
+    Local $a_ret[5] = [$a_wfp[0], DllStructGetData($t_class, 1), $a_mpos[0], $a_mpos[1], "none"]
+    Local $sClassNN = _ControlGetClassnameNN($a_ret[0]) ; optional, will run faster without it
+    $a_ret[4] = $sClassNN
+
+    Return $a_ret
+EndFunc   ;==>_Mouse_Control_GetInfo
+
+Func GetHoveredHwnd($i_xpos, $i_ypos)
+    Local $iRet = DllCall("user32.dll", "int", "WindowFromPoint", "long", $i_xpos, "long", $i_ypos)
+    If IsArray($iRet) Then
+        $appHandle = $iRet[0]
+        Return HWnd($iRet[0])
+    Else
+        Return SetError(1, 0, 0)
+    EndIf
+EndFunc   ;==>GetHoveredHwnd
+
+Func _ControlGetClassnameNN($hControl)
+    If Not IsHWnd($hControl) Then Return SetError(1, 0, "")
+    Local Const $hParent = _WinAPI_GetAncestor($appHandle, $GA_ROOT) ; get the Window handle, this is set in GetHoveredHwnd()
+    If Not $hParent Then Return SetError(2, 0, "")
+
+    Local Const $sList = WinGetClassList($hParent) ; list of every class in the Window
+    Local $aList = StringSplit(StringTrimRight($sList, 1), @LF, 2)
+    _ArraySort($aList) ; improves speed
+    Local $nInstance, $sLastClass, $sComposite
+
+    For $i = 0 To UBound($aList) - 1
+        If $sLastClass <> $aList[$i] Then ; set up the first occurrence of a unique classname
+            $sLastClass = $aList[$i]
+            $nInstance = 1
+        EndIf
+        $sComposite = $sLastClass & $nInstance ;build the ClassNN for testing with ControlGetHandle. ClassNN = Class & ClassCount
+        ;if ControlGetHandle(ClassNN) matches the given control return else look at the next instance of the classname
+        If ControlGetHandle($hParent, "", $sComposite) = $hControl Then
+            Return $sComposite
+        EndIf
+        $nInstance += 1 ; count the number of times the class name appears in the list
+    Next
+    Return SetError(3, 0, "")
+
+EndFunc   ;==>_ControlGetClassnameNN
 
 Func _RegistryGetValues()
 
@@ -242,6 +603,148 @@ Func _IniFileGetValues()
 	$gaRegUserDumpValues[1] = IniRead($gFileIniValuesSave, "values", "folder", "")
 	$gaRegUserDumpValues[2] = IniRead($gFileIniValuesSave, "values", "count", "")
 	$gaRegUserDumpValues[3] = IniRead($gFileIniValuesSave, "values", "type", "")
+
+EndFunc
+
+Func _DebugToolsMain()
+
+	If _DebugToolsCheckInstalled() Then
+;~ 		MsgBox(64, "Dump Configurator", "Windows Debugging Tools are already installed. Skipping installation.") ;test
+		$gInstalledDebuggingTools = True
+		Return 1
+	Else
+		If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
+		$iMsgBoxAnswer = MsgBox(36,"Dump Configurator","Windows Debugging Tools are not installed, which are needed for user dump creation. " & @CRLF & "Would you like to install Windows Debugging Tools now?")
+		Select
+;~ 			Case $iMsgBoxAnswer = 6 ;Yes
+			Case $iMsgBoxAnswer = 7 ;No
+				$gInstalledDebuggingTools = False
+				Return SetError(1, 0, 0)
+		EndSelect
+	EndIf
+	Local $lMsiToInstall = _DebugToolsDownload()
+	If _DebugToolsInstall($lMsiToInstall) Then
+		$gInstalledDebuggingTools = True
+	Else
+		$gInstalledDebuggingTools = False
+	EndIf
+
+EndFunc
+
+Func _DebugToolsCheckInstalled() ; returns 1 if installed
+
+	Local $lRegUninstallBase = "HKLM"
+	If @OSArch = "X64" Then $lRegUninstallBase &= "64"
+	$lRegUninstallBase &= "\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+
+	Local $lDbgToolsFound = 0
+	Local $lRegSubKey, $lRegValue
+
+	For $i = 1 To 9999999999
+		$lRegSubKey = RegEnumKey($lRegUninstallBase, $i)
+		If @error <> 0 Then ExitLoop
+		$lRegValue = RegRead($lRegUninstallBase & $lRegSubKey, "DisplayName")
+		If StringInStr($lRegValue, "Debugging Tools for Windows") Then
+			$lDbgToolsFound = 1
+			ExitLoop
+		EndIf
+	Next
+
+	Return $lDbgToolsFound
+
+EndFunc
+
+Func _DebugToolsDownload() ; returns filename if file was successfully loaded and sets error if not
+
+	Local $lDownloadSuccess = 0
+	Local $lDbtUrlBase = "https://github.com/downloads/torstenfeld/um-dumpcreator/"
+	Local $lDbtUrlFile = "dbg_"
+	Switch @OSArch
+		Case "X64"
+			$lDbtUrlFile &= "amd64.msi"
+		Case "X86"
+			$lDbtUrlFile &= "x86.msi"
+		Case "IA64"
+			$lDbtUrlFile &= "ia64.msi"
+		Case Else
+			MsgBox(16,"Dump Configurator","Your OS architecture is not supported. " & @CRLF & "Windows Debugging Tools will not be installed.",15)
+			Return SetError(1, 0, 0)
+	EndSwitch
+
+	Local $lhDownload = InetGet($lDbtUrlBase & $lDbtUrlFile, $gDirTemp & "\" & $lDbtUrlFile, 27, 1)
+	Local $lDownloadTotalSize = InetGetSize($lDbtUrlBase & $lDbtUrlFile, 11) / 1024
+	Local $lDownloadCurrentSize = InetGetInfo($lhDownload, 0) / 1024
+	Local $lDownloadPerCent
+	ProgressOn("Dump configurator", "Loading: " & $lDownloadCurrentSize & " \ " & $lDownloadTotalSize & " kBytes", $lDbtUrlBase & $lDbtUrlFile)
+	Do
+		$lDownloadCurrentSize = InetGetInfo($lhDownload, 0) / 1024
+		$lDownloadPerCent = StringFormat("%.0i", ($lDownloadCurrentSize / $lDownloadTotalSize) * 100)
+		ProgressSet($lDownloadPerCent, $lDownloadPerCent & " percent", "Loading: " & $lDownloadCurrentSize & " \ " & $lDownloadTotalSize & " kBytes")
+		Sleep(100)
+	Until InetGetInfo($lhDownload, 2)
+	InetClose($lhDownload) ; Close the handle to release resources.
+;~ 	ProgressSet(100, "Done", "Complete")
+	Sleep(500)
+	ProgressOff()
+
+	If FileExists($gDirTemp & "\" & $lDbtUrlFile) Then
+		Local $lFileSizeLocally = FileGetSize($gDirTemp & "\" & $lDbtUrlFile)
+		If ($lFileSizeLocally / 1024) = $lDownloadTotalSize Then
+			MsgBox(64,"Dump configurator","Download of Windows Debugging Tools successfull.")
+			Return $gDirTemp & "\" & $lDbtUrlFile
+		Else
+			MsgBox(16,"Dump configurator","Download of Windows Debugging Tools was not completed.")
+			Return SetError(2, 0, 0)
+		EndIf
+	Else
+		MsgBox(16,"Dump configurator","Download of Windows Debugging Tools failed.")
+		Return SetError(3, 0, 0)
+	EndIf
+
+EndFunc
+
+Func _DebugToolsInstall($lMsiToInstall) ; returns 1 if install was successfull
+
+	RunWait(@ComSpec & " /c " & $lMsiToInstall & " /qn /lv* " & $gDirTemp & "\windbgt-install.log", "", @SW_HIDE)
+
+	Sleep(2000)
+
+	If _DebugToolsCheckInstalled() Then
+		MsgBox(64,"Dump Configurator","Installation of Windows Debugging Tools finished successfully.",15)
+		Return 1
+	Else
+		MsgBox(64,"Dump Configurator","Installation of Windows Debugging Tools failed.",15)
+		Return SetError(1, 0, 0)
+	EndIf
+
+EndFunc
+
+Func _DebugToolsGetInstallFolder()
+
+	If Not $gInstalledDebuggingTools Then Return SetError(2, 0, 0)
+
+	Local $laFolders = _FileListToArray(@ProgramFilesDir, "*", 2)
+;~ 	_ArrayDisplay($laFolders, "$laFolders") ;test
+	$lArrayIndex = _ArraySearch($laFolders, "Debugging Tools for Windows", 1, 0, 0, 1)
+	If @error Then
+		$gDirDebuggingTools = IniRead($gFileIniValuesSave, "UserModeManual", "WdtPath", "")
+		If $gDirDebuggingTools <> "" Then Return 1
+
+		$gDirDebuggingTools = FileSelectFolder("Windows Debugging Tools installation folder could not be found. Please choose folder by yourself.", "", 6, @ProgramFilesDir)
+		If @error Then
+			$gInstalledDebuggingTools = false
+			Return SetError(1, 0, 0)
+		EndIf
+		If Not FileExists($gDirDebuggingTools & "\adplus.exe") Or Not FileExists($gDirDebuggingTools & "\cdb.exe") Then
+			MsgBox(16,"Dump configurator","The directory you entered seems not to be a valid Debugging Tools for Windows installation folder.")
+			$gInstalledDebuggingTools = false
+			Return SetError(2, 0, 0)
+		Else
+			IniWrite($gFileIniValuesSave, "UserModeManual", "WdtPath", $gDirDebuggingTools)
+		EndIf
+	Else
+		$gDirDebuggingTools = @ProgramFilesDir & "\" & $laFolders[$lArrayIndex]
+	EndIf
 
 EndFunc
 
@@ -324,19 +827,17 @@ Func _CheckForUpdate()
 	$lVersionOnline = _INetGetSource("https://raw.github.com/torstenfeld/um-dumpcreator/master/version.txt")
 	If _VersionCompare($gVersion, $lVersionOnline) < 0 Then
 		If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
-		$iMsgBoxAnswer = MsgBox(4,"Dump configurator","There is a new version available. Please download it from " & @CRLF & "https://github.com/torstenfeld/um-dumpcreator/downloads" & @CRLF & @CRLF & _
+		$iMsgBoxAnswer = MsgBox(4,"Dump configurator","There is a new version available. Please download it from " & @CRLF & $gUrlDownloadTool & @CRLF & @CRLF & _
 			"Would you like to open the site now?", 15)
 		Select
 			Case $iMsgBoxAnswer = 6 ;Yes
-				ShellExecuteWait("https://github.com/torstenfeld/um-dumpcreator/downloads")
+				ShellExecuteWait($gUrlDownloadTool)
 				Sleep(4000)
 				Exit 0
 ;~ 			Case $iMsgBoxAnswer = 7 ;No
 
 		EndSelect
 	EndIf
-
-
 
 EndFunc
 
