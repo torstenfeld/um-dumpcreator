@@ -701,6 +701,11 @@ Func _DebugToolsGetInstallFolder()
 			$gInstalledDebuggingTools = false
 			Return SetError(1, 0, 0)
 		EndIf
+		If Not FileExists($gDirDebuggingTools & "\adplus.exe" Or Not FileExists($gDirDebuggingTools & "\cdb.exe") Then
+			MsgBox(16,"Dump configurator","The directory you entered seems not to be a valid Debugging Tools for Windows installation folder.")
+			$gInstalledDebuggingTools = false
+			Return SetError(2, 0, 0)
+		EndIf
 	Else
 		$gDirDebuggingTools = @ProgramFilesDir & "\" & $laFolders[$lArrayIndex]
 	EndIf
