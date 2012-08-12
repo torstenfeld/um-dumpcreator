@@ -188,7 +188,7 @@ Func _DcGui()
 	$ButtonMicrosoft = GUICtrlCreateButton("MS recommendation", 384, 160, 115, 25, $WS_GROUP)
 	GUICtrlSetTip(-1, "Setting configuration, which is recommended by Microsoft for daily work")
 	$ButtonUserABrowse = GUICtrlCreateButton("Browse", 360, 104, 75, 25, $WS_GROUP)
-	$ButtonOk = GUICtrlCreateButton("Ok", 424, 192, 75, 25)
+	$ButtonSave = GUICtrlCreateButton("Save", 424, 192, 75, 25)
 	GUICtrlSetTip(-1, "Configuration is written to registry")
 	$ButtonReset = GUICtrlCreateButton("Reset", 128, 192, 75, 25)
 	GUICtrlSetTip(-1, "On setting a new configuration for the first time, the original config is saved for later restore")
@@ -289,7 +289,7 @@ Func _DcGui()
 				Else
 					_ChangeAccessUserModeDumpControl(False, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 				EndIf
-			Case $ButtonOk
+			Case $ButtonSave
 				If Not _CheckBackupIniFileValues() Then _SaveValuesToIniFile() ; returns 1 if backup has already been made
 				GUICtrlSetState($ButtonReset, $GUI_ENABLE)
 				_GetValuesFromUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
