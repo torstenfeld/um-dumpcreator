@@ -382,6 +382,10 @@ Func _DcGui()
 				#ce
 				ProcessWaitClose("adplus.exe")
 				MsgBox(0, "test", "dump successfully created") ;test
+			Case $RadioProcessWaiting
+				GUICtrlSetState($ComboProcesses, $GUI_DISABLE)
+			Case $RadioProcessExists
+				GUICtrlSetState($ComboProcesses, $GUI_ENABLE)
 
 		EndSwitch
 	WEnd
