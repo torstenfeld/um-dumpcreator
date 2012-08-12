@@ -50,7 +50,9 @@
 	Global $gDirUserManualDump
 	Global $gFileIniValuesSave = $gDirTemp & "\savedvalues.ini"
 
-	Global $gVersion = "0.0.0.3"
+	Global $gUrlDownloadTool = "https://github.com/torstenfeld/um-dumpcreator/downloads"
+
+	Global $gVersion = "0.0.0.10"
 
 	Global $gaProcesses
 	Global $gPreVista = False
@@ -83,6 +85,8 @@
 
 Func _DcMain()
 
+
+	_ArchCheck()
 	_CheckForUpdate()
 
 	_DebugToolsMain()
@@ -96,6 +100,33 @@ Func _DcMain()
 	_RegistryGetValues()
 ;~ 	_ArrayDisplay($gaRegUserDumpValues, "$gaRegUserDumpValues")
 	_DcGui()
+
+EndFunc
+
+Func _ArchCheck()
+
+	Local $lMsgBoxText = ""
+
+	Switch @OSArch
+		Case "X64"
+			If Not @AutoItX64 Then $lMsgBoxText = "The architecture of your OS (" & @OSArch & ") does not match with the architecture of this tool (X86)." & @CRLF
+		Case "X86"
+			If @AutoItX64 Then $lMsgBoxText = "The architecture of your OS (" & @OSArch & ") does not match with the architecture of this tool (X64)." & @CRLF
+	EndSwitch
+
+	If $lMsgBoxText = "" Then Return 1
+
+	Local $iMsgBoxAnswer = MsgBox(52,"Dump configurator", $lMsgBoxText & "Please download the correct version from " & @CRLF & $gUrlDownloadTool & @CRLF & @CRLF & _
+	"Would you like to open the site now?", 15)
+	Select
+		Case $iMsgBoxAnswer = 6 ;Yes
+			ShellExecuteWait($gUrlDownloadTool)
+			Sleep(4000)
+			Exit 0
+		Case $iMsgBoxAnswer = 7 ;No
+			Exit 1
+
+	EndSelect
 
 EndFunc
 
@@ -732,19 +763,17 @@ Func _CheckForUpdate()
 	$lVersionOnline = _INetGetSource("https://raw.github.com/torstenfeld/um-dumpcreator/master/version.txt")
 	If _VersionCompare($gVersion, $lVersionOnline) < 0 Then
 		If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
-		$iMsgBoxAnswer = MsgBox(4,"Dump configurator","There is a new version available. Please download it from " & @CRLF & "https://github.com/torstenfeld/um-dumpcreator/downloads" & @CRLF & @CRLF & _
+		$iMsgBoxAnswer = MsgBox(4,"Dump configurator","There is a new version available. Please download it from " & @CRLF & $gUrlDownloadTool & @CRLF & @CRLF & _
 			"Would you like to open the site now?", 15)
 		Select
 			Case $iMsgBoxAnswer = 6 ;Yes
-				ShellExecuteWait("https://github.com/torstenfeld/um-dumpcreator/downloads")
+				ShellExecuteWait($gUrlDownloadTool)
 				Sleep(4000)
 				Exit 0
 ;~ 			Case $iMsgBoxAnswer = 7 ;No
 
 		EndSelect
 	EndIf
-
-
 
 EndFunc
 
