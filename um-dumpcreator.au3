@@ -241,6 +241,8 @@ Func _DcGui()
 		_GuiComboProcessFill()
 	EndIf
 
+	GUICtrlSetData($InputUserLocation, IniRead($gFileIniValuesSave, "UserModeManual", "DumpLocation", ""))
+
 	While 1
 		$nMsg = GUIGetMsg()
 		Switch $nMsg
@@ -319,6 +321,7 @@ Func _DcGui()
 				If @error Then ContinueLoop
 				GUICtrlSetData($InputUserLocation, $gDirUserManualDump)
 			Case $ButtonUserCreateDump
+				IniWrite($gFileIniValuesSave, "UserModeManual", "DumpLocation", GUICtrlRead($InputUserLocation))
 				If GUICtrlRead($ComboProcesses) = "" Then
 					If GUICtrlRead($RadioProcessExists) = $GUI_CHECKED Then
 						MsgBox(0, "error", "error")
