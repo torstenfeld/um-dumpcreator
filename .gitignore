@@ -28,3 +28,5 @@ obj/
 _ReSharper*/
 [Tt]est[Rr]esult*
 *crash*/
+incs/APIConstants.au3
+incs/WinAPIEx.au3
