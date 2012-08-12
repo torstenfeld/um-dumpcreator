@@ -181,7 +181,8 @@ Func _DcGui()
 	GUICtrlSetTip(-1, "Setting configuration, which is recommended by Microsoft for daily work")
 	$Button1 = GUICtrlCreateButton("Browse", 360, 104, 75, 25, $WS_GROUP)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
-	$GroupUserManual = GUICtrlCreateGroup("User Mode Manual", 8, 200, 497, 121)
+
+	$GroupUserManual = GUICtrlCreateGroup("User Mode Manual", 8, 200, 497, 161)
 	$Label1 = GUICtrlCreateLabel("Choose Process:", 16, 224, 84, 17)
 	$ComboProcesses = GUICtrlCreateCombo("", 128, 224, 217, 25)
 	$ButtonRefresh = GUICtrlCreateButton("Refresh", 360, 224, 75, 25, $WS_GROUP)
@@ -193,9 +194,14 @@ Func _DcGui()
 	$Label3 = GUICtrlCreateLabel("Dump location:", 16, 256, 75, 17)
 	$InputUserLocation = GUICtrlCreateInput("", 128, 256, 185, 21)
 	$ButtonUserBrowse = GUICtrlCreateButton("Browse", 360, 256, 75, 25, $WS_GROUP)
-	$ButtonUserCreateDump = GUICtrlCreateButton("Create dump", 360, 288, 75, 25, $WS_GROUP)
+	$ButtonUserCreateDump = GUICtrlCreateButton("Create dump", 360, 320, 75, 25)
+	$Label4 = GUICtrlCreateLabel("Process existing:", 16, 320, 83, 17)
+	$RadioProcessExists = GUICtrlCreateRadio("Existing", 128, 320, 89, 17)
+	GUICtrlSetState(-1, $GUI_CHECKED)
+	$RadioProcessWaiting = GUICtrlCreateRadio("Waiting for", 224, 320, 113, 17)
+
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
-	$GroupKernel = GUICtrlCreateGroup("Kernel mode", 8, 328, 497, 113)
+	$GroupKernel = GUICtrlCreateGroup("Kernel mode", 8, 368, 497, 113)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 	$ButtonReset = GUICtrlCreateButton("Reset", 8, 448, 75, 25, $WS_GROUP)
 	GUICtrlSetTip(-1, "On setting a new configuration for the first time, the original config is saved for later restore")
@@ -314,37 +320,56 @@ Func _DcGui()
 				GUICtrlSetData($InputUserLocation, $gDirUserManualDump)
 			Case $ButtonUserCreateDump
 				If GUICtrlRead($ComboProcesses) = "" Then
-					MsgBox(0, "error", "error")
-					ContinueLoop
+					If GUICtrlRead($RadioProcessExists) = $GUI_CHECKED Then
+						MsgBox(0, "error", "error")
+						ContinueLoop
+					EndIf
 				EndIf
 				If Not FileExists(GUICtrlRead($InputUserLocation)) Then
 					MsgBox(0, "error", "error")
 					ContinueLoop
 				EndIf
-				Local $lFileAdPlus = $gDirTemp & "\adplus.vbs"
-				FileInstall(".\tools\adplus.vbs", $lFileAdPlus, 1)
-				FileInstall(".\tools\cdb.exe", $gDirTemp & "\cdb.exe", 1)
-				FileInstall(".\tools\dbgeng.dll", $gDirTemp & "\dbgeng.dll", 1)
-				FileInstall(".\tools\dbghelp.dll", $gDirTemp & "\dbghelp.dll", 1)
-				FileInstall(".\tools\tlist.exe", $gDirTemp & "\tlist.exe", 1)
+				Local $lFileAdPlus = $gDirDebuggingTools & "\adplus.exe"
+
 				If GUICtrlRead($RadioUserCrash) = $GUI_CHECKED Then
 					$lAdPlusParameters = " -Crash"
 				Else
 					$lAdPlusParameters = " -Hang"
 				EndIf
-				$lAdPlusParameters &= " -p " & StringRegExpReplace(GUICtrlRead($ComboProcesses), ".*\((\d*)\).*", "$1") & _
-					' -o "' & GUICtrlRead($InputUserLocation) & _
-					'" -quiet -FullOnFirst';-lcq'
-;~ 					'" -quiet';-lcq'
+				If GUICtrlRead($RadioProcessExists) = $GUI_CHECKED Then
+					$lAdPlusParameters &= " -p " & StringRegExpReplace(GUICtrlRead($ComboProcesses), ".*\((\d*)\).*", "$1")
+				Else
+					;InputBox features: Title=Yes, Prompt=Yes, Default Text=No
+					If Not IsDeclared("sInputBoxAnswer") Then Local $sInputBoxAnswer
+					$sInputBoxAnswer = InputBox("Dump configurator","Please enter the name of the process (without path)" & @CRLF & @CRLF & " e.g. notepad.exe","","","-1","-1")
+					Switch @Error
+						Case 0 ;OK - The string returned is valid
+							$lAdPlusParameters &= " -pmn " & $sInputBoxAnswer
+						Case Else ;any error
+							MsgBox(0, "test", "InputBox error: " & @error) ;test
+							ContinueLoop
+					EndSwitch
+				EndIf
+				 $lAdPlusParameters &= ' -o "' & GUICtrlRead($InputUserLocation) & _
+					'" -FullOnFirst -CTCFB'
+;~ 					'" -FullOnFirst -lcqd'
 
-;~ 				MsgBox(0, "test", "$lAdPlusParameters: " & @CRLF & $lAdPlusParameters) ;test
-				RunWait(@ComSpec & " /c " & $lFileAdPlus & $lAdPlusParameters);, @SW_HIDE)
-				FileDelete($lFileAdPlus)
-				FileDelete($gDirTemp & "\cdb.exe")
-				FileDelete($gDirTemp & "\dbgeng.dll")
-				FileDelete($gDirTemp & "\dbghelp.dll")
-				FileDelete($gDirTemp & "\tlist.exe")
-				MsgBox(0, "test", "dump successfully created")
+;~ 				Run(@ComSpec & ' /c ' & FileGetShortName($lFileAdPlus) & $lAdPlusParameters);, @SW_HIDE)
+				Run(FileGetShortName($lFileAdPlus) & $lAdPlusParameters);, @SW_HIDE)
+
+
+
+#cs ### adplus output
+				Logs and memory dumps will be placed in E:\git\hub\um-dumpcreator\20120812_15221
+				3_Crash_Mode
+				Starting to monitor the following processes:
+				   AVCRASH.EXE
+				Press Enter to stop Monitoring...
+				Attaching to 6432 - avcrash in Crash mode 08/12/2012 15:22:53
+				Exited 6432 avcrash 08/12/2012 15:22:57
+#ce
+				ProcessWaitClose("adplus.exe")
+				MsgBox(0, "test", "dump successfully created") ;test
 
 		EndSwitch
 	WEnd
