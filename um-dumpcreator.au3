@@ -187,7 +187,7 @@ Func _DcGui()
 	GUICtrlSetTip(-1, "Setting configuration, which is recommended by Avira Userland QA")
 	$ButtonMicrosoft = GUICtrlCreateButton("MS recommendation", 384, 160, 115, 25, $WS_GROUP)
 	GUICtrlSetTip(-1, "Setting configuration, which is recommended by Microsoft for daily work")
-	$Button1 = GUICtrlCreateButton("Browse", 360, 104, 75, 25, $WS_GROUP)
+	$ButtonUserABrowse = GUICtrlCreateButton("Browse", 360, 104, 75, 25, $WS_GROUP)
 	$ButtonOk = GUICtrlCreateButton("Ok", 424, 192, 75, 25)
 	GUICtrlSetTip(-1, "Configuration is written to registry")
 	$ButtonReset = GUICtrlCreateButton("Reset", 128, 192, 75, 25)
@@ -301,6 +301,16 @@ Func _DcGui()
 				_RegistryGetValues()
 				_SetValuesToUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 				MsgBox(64,"Dump configurator","The new configuration has been written to registry.",15)
+			Case $ButtonUserABrowse
+				$lFolderDump = GUICtrlRead($InputDumpLocate)
+				If StringInStr($lFolderDump, "%") Then
+					$lTempStringBetweenResult = StringRegExpReplace($lFolderDump, ".*\%(.*)\%.*", "$1")
+					$lFolderDump = StringReplace($lFolderDump, "%" & $lTempStringBetweenResult & "%", EnvGet($lTempStringBetweenResult))
+				EndIf
+				If Not FileExists($lFolderDump) Then $lFolderDump = @ScriptDir
+				$lFolderDump = FileSelectFolder("Please choose a directoy to store the dumps", "", 7, $lFolderDump, $FormDcGui)
+				If @error Then ContinueLoop
+				GUICtrlSetData($InputDumpLocate, $lFolderDump)
 			Case $ButtonAvira
 				GUICtrlSetState($CheckboxActivate, $GUI_CHECKED)
 				GUICtrlSetData($InputDumpCount, 10)
