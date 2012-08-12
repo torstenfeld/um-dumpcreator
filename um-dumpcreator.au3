@@ -696,15 +696,20 @@ Func _DebugToolsGetInstallFolder()
 ;~ 	_ArrayDisplay($laFolders, "$laFolders") ;test
 	$lArrayIndex = _ArraySearch($laFolders, "Debugging Tools for Windows", 1, 0, 0, 1)
 	If @error Then
+		$gDirDebuggingTools = IniRead($gFileIniValuesSave, "UserModeManual", "WdtPath", "")
+		If $gDirDebuggingTools <> "" Then Return 1
+
 		$gDirDebuggingTools = FileSelectFolder("Windows Debugging Tools installation folder could not be found. Please choose folder by yourself.", "", 6, @ProgramFilesDir)
 		If @error Then
 			$gInstalledDebuggingTools = false
 			Return SetError(1, 0, 0)
 		EndIf
-		If Not FileExists($gDirDebuggingTools & "\adplus.exe" Or Not FileExists($gDirDebuggingTools & "\cdb.exe") Then
+		If Not FileExists($gDirDebuggingTools & "\adplus.exe") Or Not FileExists($gDirDebuggingTools & "\cdb.exe") Then
 			MsgBox(16,"Dump configurator","The directory you entered seems not to be a valid Debugging Tools for Windows installation folder.")
 			$gInstalledDebuggingTools = false
 			Return SetError(2, 0, 0)
+		Else
+			IniWrite($gFileIniValuesSave, "UserModeManual", "WdtPath", $gDirDebuggingTools)
 		EndIf
 	Else
 		$gDirDebuggingTools = @ProgramFilesDir & "\" & $laFolders[$lArrayIndex]
