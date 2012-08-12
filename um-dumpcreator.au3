@@ -1,12 +1,14 @@
 #RequireAdmin
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
-#AutoIt3Wrapper_icon=favicon.ico
-#AutoIt3Wrapper_outfile=dumpconfigurator-0.0.0.8.exe
-#AutoIt3Wrapper_UseX64=n
+#AutoIt3Wrapper_Icon=favicon.ico
+#AutoIt3Wrapper_Outfile=dumpconfigurator-0.0.0.10-x86.exe
+#AutoIt3Wrapper_Outfile_x64=dumpconfigurator-0.0.0.10-x64.exe
+#AutoIt3Wrapper_Compile_Both=y
 #AutoIt3Wrapper_Res_Comment=Sets registry settings for automatic creation of user dumps
 #AutoIt3Wrapper_Res_Description=Sets registry settings for automatic creation of user dumps
-#AutoIt3Wrapper_Res_Fileversion=0.0.0.8
+#AutoIt3Wrapper_Res_Fileversion=0.0.0.10
 #AutoIt3Wrapper_Res_LegalCopyright=Copyright © 2011 Torsten Feld - All rights reserved.
+#AutoIt3Wrapper_Res_requestedExecutionLevel=requireAdministrator
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 
 
@@ -22,6 +24,7 @@
 
 	#include <GuiComboBox.au3>
 
+	#Include <File.au3>
 	#Include <String.au3>
 	#include <INet.au3>
 	#Include <Misc.au3>
@@ -52,6 +55,7 @@
 	Global $gaProcesses
 	Global $gPreVista = False
 	Global $gInstalledDebuggingTools
+	Global $gDirDebuggingTools
 
 	Global $pos1 = MouseGetPos()
 	Global $pos2 = MouseGetPos() ; must be initialized
@@ -82,6 +86,7 @@ Func _DcMain()
 	_CheckForUpdate()
 
 	_DebugToolsMain()
+	_DebugToolsGetInstallFolder()
 
 	_ProcessGetList()
 
@@ -625,6 +630,25 @@ Func _DebugToolsInstall($lMsiToInstall) ; returns 1 if install was successfull
 	Else
 		MsgBox(64,"Dump Configurator","Installation of Windows Debugging Tools failed.",15)
 		Return SetError(1, 0, 0)
+	EndIf
+
+EndFunc
+
+Func _DebugToolsGetInstallFolder()
+
+	If Not $gInstalledDebuggingTools Then Return SetError(2, 0, 0)
+
+	Local $laFolders = _FileListToArray(@ProgramFilesDir, "*", 2)
+;~ 	_ArrayDisplay($laFolders, "$laFolders") ;test
+	$lArrayIndex = _ArraySearch($laFolders, "Debugging Tools for Windows", 1, 0, 0, 1)
+	If @error Then
+		$gDirDebuggingTools = FileSelectFolder("Windows Debugging Tools installation folder could not be found. Please choose folder by yourself.", "", 6, @ProgramFilesDir)
+		If @error Then
+			$gInstalledDebuggingTools = false
+			Return SetError(1, 0, 0)
+		EndIf
+	Else
+		$gDirDebuggingTools = @ProgramFilesDir & "\" & $laFolders[$lArrayIndex]
 	EndIf
 
 EndFunc
