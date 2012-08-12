@@ -351,23 +351,32 @@ Func _DcGui()
 					EndSwitch
 				EndIf
 				 $lAdPlusParameters &= ' -o "' & GUICtrlRead($InputUserLocation) & _
-					'" -FullOnFirst -CTCFB'
-;~ 					'" -FullOnFirst -lcqd'
+					'" -FullOnFirst -lcqd'
+;~ 					'" -FullOnFirst -CTCFB'
 
 ;~ 				Run(@ComSpec & ' /c ' & FileGetShortName($lFileAdPlus) & $lAdPlusParameters);, @SW_HIDE)
-				Run(FileGetShortName($lFileAdPlus) & $lAdPlusParameters);, @SW_HIDE)
+				Local $lOutputRun = Run(FileGetShortName($lFileAdPlus) & $lAdPlusParameters);, @SW_MAXIMIZE, $STDERR_CHILD + $STDOUT_CHILD)
+;~ 				While 1
+;~ 					$test = StdoutRead($lOutputRun)
+;~ 					If @error Then ExitLoop
+;~ 					MsgBox(0, "StdoutRead", $test) ;test
+;~ 				WEnd
+;~ 				While 1
+;~ 					$test = StderrRead($lOutputRun)
+;~ 					If @error Then ExitLoop
+;~ 					MsgBox(0, "StderrRead", $test) ;test
+;~ 				WEnd
+				If GUICtrlRead($RadioProcessWaiting) = $GUI_CHECKED Then MsgBox(64,"Dump configurator","After the crash occured, please close the crashed window and close the DOS box which just opened with <ENTER>.",10)
 
-
-
-#cs ### adplus output
-				Logs and memory dumps will be placed in E:\git\hub\um-dumpcreator\20120812_15221
-				3_Crash_Mode
-				Starting to monitor the following processes:
-				   AVCRASH.EXE
-				Press Enter to stop Monitoring...
-				Attaching to 6432 - avcrash in Crash mode 08/12/2012 15:22:53
-				Exited 6432 avcrash 08/12/2012 15:22:57
-#ce
+				#cs ### adplus output
+					Logs and memory dumps will be placed in E:\git\hub\um-dumpcreator\20120812_15221
+					3_Crash_Mode
+					Starting to monitor the following processes:
+					   AVCRASH.EXE
+					Press Enter to stop Monitoring...
+					Attaching to 6432 - avcrash in Crash mode 08/12/2012 15:22:53
+					Exited 6432 avcrash 08/12/2012 15:22:57
+				#ce
 				ProcessWaitClose("adplus.exe")
 				MsgBox(0, "test", "dump successfully created") ;test
 
