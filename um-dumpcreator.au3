@@ -52,7 +52,7 @@
 
 	Global $gUrlDownloadTool = "https://github.com/torstenfeld/um-dumpcreator/downloads"
 
-	Global $gVersion = "0.0.0.10"
+	Global $gVersion
 
 	Global $gaProcesses
 	Global $gPreVista = False
@@ -87,6 +87,14 @@ Func _DcMain()
 
 
 	_ArchCheck()
+
+	If @Compiled Then
+		$gVersion = FileGetVersion(@ScriptFullPath, "FileVersion")
+		If @error Then $gVersion = "0.0.0.0"
+	Else
+		$gVersion = "9.99.99.99 - not compiled"
+	EndIf
+
 	_CheckForUpdate()
 
 	_DebugToolsMain()
@@ -156,7 +164,7 @@ Func _DcGui()
 	Local $lChButtonActive = False
 
 	#Region ### START Koda GUI section ### Form=
-	$FormDcGui = GUICreate("Dump Configurator", 517, 481, 214, 131)
+	$FormDcGui = GUICreate("Dump Configurator - v" & $gVersion, 517, 481, 214, 131)
 	$GroupUserAutomatic = GUICtrlCreateGroup("User Mode", 8, 32, 497, 161)
 	$CheckboxActivate = GUICtrlCreateCheckbox("Activate", 16, 48, 97, 17)
 	GUICtrlSetTip(-1, "(De)activate automatic creation of process dumps, if a process crashes")
