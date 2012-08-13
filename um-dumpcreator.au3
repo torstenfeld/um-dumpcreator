@@ -74,6 +74,8 @@
 
 	Global $ComboProcesses
 
+	Global $_COMMON_KERNEL32DLL=DllOpen("kernel32.dll")		; DLLClose() will be done automatically on exit. [this doesn't reload the DLL]
+
 #endregion
 
 #region ### main
@@ -358,6 +360,16 @@ Func _DcGui()
 				If @error Then ContinueLoop
 				GUICtrlSetData($InputUserLocation, $gDirUserManualDump)
 			Case $ButtonUserCreateDump
+
+				;test start
+				Local $lhProcess = _ProcessOpen(StringRegExpReplace(GUICtrlRead($ComboProcesses), ".*\((\d*)\).*", "$1"), 0x00001000)
+				Local $lProcessArch = _ProcessIsWow64($lhProcess) ; 1 if x86 proc on x64 os
+				_ProcessCloseHandle($lhProcess)
+				MsgBox(0, "test", $lProcessArch)
+				ContinueLoop ;test
+				;test end
+
+
 				IniWrite($gFileIniValuesSave, "UserModeManual", "DumpLocation", GUICtrlRead($InputUserLocation))
 				If GUICtrlRead($ComboProcesses) = "" Then
 					If GUICtrlRead($RadioProcessExists) = $GUI_CHECKED Then
@@ -862,6 +874,43 @@ Func _ProcessIsWow64($hProcess)
 	Return $aRet[2]	; non-zero = Wow64, 0 = not
 EndFunc
 
+Func _ProcessOpen($vProcessID,$iAccess,$bInheritHandle=False)
+	Local $aRet
+	; Special 'Open THIS process' ID?  [returns pseudo-handle from Windows]
+	If $vProcessID=-1 Then
+		$aRet=DllCall($_COMMON_KERNEL32DLL,"handle","GetCurrentProcess")
+		If @error Then Return SetError(2,@error,0)
+		Return $aRet[0]		; usually the constant '-1', but we're keeping it future-OS compatible this way
+	ElseIf Not __PFEnforcePID($vProcessID) Then
+		Return SetError(16,0,0)		; Process does not exist or was invalid
+	EndIf
+	$aRet=DllCall($_COMMON_KERNEL32DLL,"handle","OpenProcess","dword",$iAccess,"bool",$bInheritHandle,"dword",$vProcessID)
+	If @error Then Return SetError(2,@error,0)
+	If Not $aRet[0] Then Return SetError(3,@error,0)
+	Return SetExtended($vProcessID,$aRet[0])	; Return Process ID in @extended in case a process name was passed
+EndFunc
+
+Func _ProcessCloseHandle(ByRef $hProcess)
+	If Not __PFCloseHandle($hProcess) Then Return SetError(@error,@extended,False)
+	Return True
+EndFunc
+
+Func __PFEnforcePID(ByRef $vPID)
+	If IsInt($vPID) Then Return True
+	$vPID=ProcessExists($vPID)
+	If $vPID Then Return True
+	Return SetError(1,0,False)
+EndFunc
+
+Func __PFCloseHandle(ByRef $hHandle)
+	If Not IsPtr($hHandle) Or $hHandle=0 Then Return SetError(1,0,False)
+	Local $aRet=DllCall($_COMMON_KERNEL32DLL,"bool","CloseHandle","handle",$hHandle)
+	If @error Then Return SetError(2,@error,False)
+	If Not $aRet[0] Then Return SetError(3,@error,False)
+	; non-zero value for return means success
+	$hHandle=0	; invalidate handle
+	Return True
+EndFunc
 
 #cs ; notes
 
