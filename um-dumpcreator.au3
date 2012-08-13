@@ -53,6 +53,7 @@
 	Global $gUrlDownloadTool = "https://github.com/torstenfeld/um-dumpcreator/downloads"
 
 	Global $gVersion
+	Global $gTitleMsgBox = "Dump configurator"
 
 	Global $gaProcesses
 	Global $gPreVista = False
@@ -124,7 +125,7 @@ Func _ArchCheck()
 
 	If $lMsgBoxText = "" Then Return 1
 
-	Local $iMsgBoxAnswer = MsgBox(52,"Dump configurator", $lMsgBoxText & "Please download the correct version from " & @CRLF & $gUrlDownloadTool & @CRLF & @CRLF & _
+	Local $iMsgBoxAnswer = MsgBox(52,$gTitleMsgBox, $lMsgBoxText & "Please download the correct version from " & @CRLF & $gUrlDownloadTool & @CRLF & @CRLF & _
 	"Would you like to open the site now?", 15)
 	Select
 		Case $iMsgBoxAnswer = 6 ;Yes
@@ -150,7 +151,7 @@ Func _OsCheckPreVista()
 		Case "WIN_2008R2", "WIN_7", "WIN_8", "WIN_2008", "WIN_VISTA", "WIN_2003"
 			$gPreVista = False
 		Case Else
-			MsgBox(16,"Dump configurator","Unfortunately, the Operating System you are using currently not supported. " & @CRLF & _
+			MsgBox(16,$gTitleMsgBox,"Unfortunately, the Operating System you are using currently not supported. " & @CRLF & _
 				"Please write an email to torsten@torsten-feld.de with the following information:" & @CRLF & _
 				@OSVersion & " / " & @OSBuild & " / " & @OSServicePack & @CRLF & @CRLF & _
 				"Visit https://github.com/torstenfeld/um-dumpcreator for latest news.")
@@ -164,7 +165,7 @@ Func _DcGui()
 	Local $lChButtonActive = False
 
 	#Region ### START Koda GUI section ### Form=
-	$FormDcGui = GUICreate("Dump Configurator - v" & $gVersion, 527, 474, 214, 131)
+	$FormDcGui = GUICreate($gTitleMsgBox & " - v" & $gVersion, 527, 474, 214, 131)
 	$ButtonCancel = GUICtrlCreateButton("Cancel", 440, 440, 75, 25)
 	GUICtrlSetTip(-1, "Quits the tool")
 	$Tab1 = GUICtrlCreateTab(8, 32, 513, 401)
@@ -294,13 +295,13 @@ Func _DcGui()
 				GUICtrlSetState($ButtonReset, $GUI_ENABLE)
 				_GetValuesFromUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 				If _CompareUserDumpValues() Then
-					MsgBox(262208,"Dump configurator","No value has changed.",15)
+					MsgBox(262208,$gTitleMsgBox,"No value has changed.",15)
 					ContinueLoop
 				EndIf
 				_RegistryWriteValues()
 				_RegistryGetValues()
 				_SetValuesToUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
-				MsgBox(64,"Dump configurator","The new configuration has been written to registry.",15)
+				MsgBox(64,$gTitleMsgBox,"The new configuration has been written to registry.",15)
 			Case $ButtonUserABrowse
 				$lFolderDump = GUICtrlRead($InputDumpLocate)
 				If StringInStr($lFolderDump, "%") Then
@@ -337,7 +338,7 @@ Func _DcGui()
 					ShellExecute($lFolderDump)
 				Else
 					If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
-					$iMsgBoxAnswer = MsgBox(52,"Dump configurator","The folder " & $lFolderDump & " does not exist. Would you like to create it now?")
+					$iMsgBoxAnswer = MsgBox(52,$gTitleMsgBox,"The folder " & $lFolderDump & " does not exist. Would you like to create it now?")
 					Select
 						Case $iMsgBoxAnswer = 6 ;Yes
 							DirCreate($lFolderDump)
@@ -355,12 +356,12 @@ Func _DcGui()
 				IniWrite($gFileIniValuesSave, "UserModeManual", "DumpLocation", GUICtrlRead($InputUserLocation))
 				If GUICtrlRead($ComboProcesses) = "" Then
 					If GUICtrlRead($RadioProcessExists) = $GUI_CHECKED Then
-						MsgBox(0, "error", "error")
+						MsgBox(0, $gTitleMsgBox, "error") ;test
 						ContinueLoop
 					EndIf
 				EndIf
 				If Not FileExists(GUICtrlRead($InputUserLocation)) Then
-					MsgBox(0, "error", "error")
+					MsgBox(0, $gTitleMsgBox, "error") ;test
 					ContinueLoop
 				EndIf
 				Local $lFileAdPlus = $gDirDebuggingTools & "\adplus.exe"
@@ -380,7 +381,7 @@ Func _DcGui()
 						Case 0 ;OK - The string returned is valid
 							$lAdPlusParameters &= " -pmn " & $sInputBoxAnswer
 						Case Else ;any error
-							MsgBox(0, "test", "InputBox error: " & @error) ;test
+							MsgBox(0, $gTitleMsgBox, "InputBox error: " & @error) ;test
 							ContinueLoop
 					EndSwitch
 				EndIf
@@ -391,10 +392,10 @@ Func _DcGui()
 ;~ 				Run(@ComSpec & ' /c ' & FileGetShortName($lFileAdPlus) & $lAdPlusParameters);, @SW_HIDE)
 				Local $lOutputRun = Run(FileGetShortName($lFileAdPlus) & $lAdPlusParameters);, @SW_MAXIMIZE, $STDERR_CHILD + $STDOUT_CHILD)
 
-				If GUICtrlRead($RadioProcessWaiting) = $GUI_CHECKED Then MsgBox(64,"Dump configurator","After the crash occured, please close the crashed window and close the DOS box which just opened with <ENTER>.",10)
+				If GUICtrlRead($RadioProcessWaiting) = $GUI_CHECKED Then MsgBox(64,$gTitleMsgBox,"After the crash occured, please close the crashed window and close the DOS box which just opened with <ENTER>.",10)
 
 				ProcessWaitClose("adplus.exe")
-				MsgBox(0, "test", "dump successfully created") ;test
+				MsgBox(0, $gTitleMsgBox, "Dump has been created") ;test
 			Case $RadioProcessWaiting
 				GUICtrlSetState($ComboProcesses, $GUI_DISABLE)
 			Case $RadioProcessExists
@@ -584,7 +585,7 @@ Func _RegistryWriteValues()
 
 	If $gaRegUserDumpValuesNew[0] = True Then
 		RegWrite($lRegBase, "DumpFolder", "REG_EXPAND_SZ", $gaRegUserDumpValuesNew[1])
-		If @error Then MsgBox(0, "test", "RegWrite error: " & @error)
+		If @error Then MsgBox(0, $gTitleMsgBox, "RegWrite error: " & @error) ;test
 		RegWrite($lRegBase, "DumpCount", "REG_DWORD", $gaRegUserDumpValuesNew[2])
 		RegWrite($lRegBase, "DumpType", "REG_DWORD", $gaRegUserDumpValuesNew[3])
 	Else
@@ -614,7 +615,7 @@ Func _DebugToolsMain()
 		Return 1
 	Else
 		If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
-		$iMsgBoxAnswer = MsgBox(36,"Dump Configurator","Windows Debugging Tools are not installed, which are needed for user dump creation. " & @CRLF & "Would you like to install Windows Debugging Tools now?")
+		$iMsgBoxAnswer = MsgBox(36,$gTitleMsgBox,"Windows Debugging Tools are not installed, which are needed for user dump creation. " & @CRLF & "Would you like to install Windows Debugging Tools now?")
 		Select
 ;~ 			Case $iMsgBoxAnswer = 6 ;Yes
 			Case $iMsgBoxAnswer = 7 ;No
@@ -667,7 +668,7 @@ Func _DebugToolsDownload() ; returns filename if file was successfully loaded an
 		Case "IA64"
 			$lDbtUrlFile &= "ia64.msi"
 		Case Else
-			MsgBox(16,"Dump Configurator","Your OS architecture is not supported. " & @CRLF & "Windows Debugging Tools will not be installed.",15)
+			MsgBox(16,$gTitleMsgBox,"Your OS architecture is not supported. " & @CRLF & "Windows Debugging Tools will not be installed.",15)
 			Return SetError(1, 0, 0)
 	EndSwitch
 
@@ -675,7 +676,7 @@ Func _DebugToolsDownload() ; returns filename if file was successfully loaded an
 	Local $lDownloadTotalSize = InetGetSize($lDbtUrlBase & $lDbtUrlFile, 11) / 1024
 	Local $lDownloadCurrentSize = InetGetInfo($lhDownload, 0) / 1024
 	Local $lDownloadPerCent
-	ProgressOn("Dump configurator", "Loading: " & $lDownloadCurrentSize & " \ " & $lDownloadTotalSize & " kBytes", $lDbtUrlBase & $lDbtUrlFile)
+	ProgressOn($gTitleMsgBox, "Loading: " & $lDownloadCurrentSize & " \ " & $lDownloadTotalSize & " kBytes", $lDbtUrlBase & $lDbtUrlFile)
 	Do
 		$lDownloadCurrentSize = InetGetInfo($lhDownload, 0) / 1024
 		$lDownloadPerCent = StringFormat("%.0i", ($lDownloadCurrentSize / $lDownloadTotalSize) * 100)
@@ -690,14 +691,14 @@ Func _DebugToolsDownload() ; returns filename if file was successfully loaded an
 	If FileExists($gDirTemp & "\" & $lDbtUrlFile) Then
 		Local $lFileSizeLocally = FileGetSize($gDirTemp & "\" & $lDbtUrlFile)
 		If ($lFileSizeLocally / 1024) = $lDownloadTotalSize Then
-			MsgBox(64,"Dump configurator","Download of Windows Debugging Tools successfull.")
+			MsgBox(64,$gTitleMsgBox,"Download of Windows Debugging Tools successfull.")
 			Return $gDirTemp & "\" & $lDbtUrlFile
 		Else
-			MsgBox(16,"Dump configurator","Download of Windows Debugging Tools was not completed.")
+			MsgBox(16,$gTitleMsgBox,"Download of Windows Debugging Tools was not completed.")
 			Return SetError(2, 0, 0)
 		EndIf
 	Else
-		MsgBox(16,"Dump configurator","Download of Windows Debugging Tools failed.")
+		MsgBox(16,$gTitleMsgBox,"Download of Windows Debugging Tools failed.")
 		Return SetError(3, 0, 0)
 	EndIf
 
@@ -710,10 +711,10 @@ Func _DebugToolsInstall($lMsiToInstall) ; returns 1 if install was successfull
 	Sleep(2000)
 
 	If _DebugToolsCheckInstalled() Then
-		MsgBox(64,"Dump Configurator","Installation of Windows Debugging Tools finished successfully.",15)
+		MsgBox(64,$gTitleMsgBox,"Installation of Windows Debugging Tools finished successfully.",15)
 		Return 1
 	Else
-		MsgBox(64,"Dump Configurator","Installation of Windows Debugging Tools failed.",15)
+		MsgBox(64,$gTitleMsgBox,"Installation of Windows Debugging Tools failed.",15)
 		Return SetError(1, 0, 0)
 	EndIf
 
@@ -736,7 +737,7 @@ Func _DebugToolsGetInstallFolder()
 			Return SetError(1, 0, 0)
 		EndIf
 		If Not FileExists($gDirDebuggingTools & "\adplus.exe") Or Not FileExists($gDirDebuggingTools & "\cdb.exe") Then
-			MsgBox(16,"Dump configurator","The directory you entered seems not to be a valid Debugging Tools for Windows installation folder.")
+			MsgBox(16,$gTitleMsgBox,"The directory you entered seems not to be a valid Debugging Tools for Windows installation folder.")
 			$gInstalledDebuggingTools = false
 			Return SetError(2, 0, 0)
 		Else
@@ -795,7 +796,7 @@ Func _SetValuesToUserDumpItems(ByRef $CheckboxActivate, ByRef $InputDumpCount, B
 		Case 2
 			GUICtrlSetState($RadioFullDump, $GUI_CHECKED)
 		Case Else
-			MsgBox(262160,"Dump Configurator","Error in _SetValuesToUserDumpItems()" & @CRLF & @CRLF & "Weird value in $gaRegUserDumpValues[3]",10)
+			MsgBox(262160,$gTitleMsgBox,"Error in _SetValuesToUserDumpItems()" & @CRLF & @CRLF & "Weird value in $gaRegUserDumpValues[3]",10)
 			Exit(1)
 
 	EndSwitch
@@ -827,7 +828,7 @@ Func _CheckForUpdate()
 	$lVersionOnline = _INetGetSource("https://raw.github.com/torstenfeld/um-dumpcreator/master/version.txt")
 	If _VersionCompare($gVersion, $lVersionOnline) < 0 Then
 		If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
-		$iMsgBoxAnswer = MsgBox(4,"Dump configurator","There is a new version available. Please download it from " & @CRLF & $gUrlDownloadTool & @CRLF & @CRLF & _
+		$iMsgBoxAnswer = MsgBox(4,$gTitleMsgBox,"There is a new version available. Please download it from " & @CRLF & $gUrlDownloadTool & @CRLF & @CRLF & _
 			"Would you like to open the site now?", 15)
 		Select
 			Case $iMsgBoxAnswer = 6 ;Yes
