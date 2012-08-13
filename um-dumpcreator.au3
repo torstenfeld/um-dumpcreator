@@ -114,6 +114,8 @@ EndFunc
 
 Func _ArchCheck()
 
+	If Not @Compiled Then Return 0
+
 	Local $lMsgBoxText = ""
 
 	Switch @OSArch
@@ -188,9 +190,9 @@ Func _DcGui()
 	GUICtrlSetTip(-1, "Whole memory of the process is written to disk")
 	$ButtonCustomDump = GUICtrlCreateButton("Custom dump", 136, 188, 75, 25)
 	GUICtrlSetState(-1, $GUI_HIDE)
-	$ButtonAvira = GUICtrlCreateButton("Avira recommendation", 272, 188, 115, 25)
-	GUICtrlSetTip(-1, "Setting configuration, which is recommended by Avira Userland QA")
-	$ButtonMicrosoft = GUICtrlCreateButton("MS recommendation", 392, 188, 115, 25)
+	$ButtonAvira = GUICtrlCreateButton("Extended", 392, 188, 115, 25)
+	GUICtrlSetTip(-1, "Setting configuration, which is recommended to collect data for troubleshooting")
+	$ButtonMicrosoft = GUICtrlCreateButton("Microsoft", 272, 188, 115, 25)
 	GUICtrlSetTip(-1, "Setting configuration, which is recommended by Microsoft for daily work")
 	$ButtonUserABrowse = GUICtrlCreateButton("Browse", 368, 132, 75, 25)
 	$ButtonSave = GUICtrlCreateButton("Save", 432, 220, 75, 25)
