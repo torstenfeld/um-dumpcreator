@@ -847,6 +847,22 @@ Func _CheckForUpdate()
 
 EndFunc
 
+Func _ProcessIsWow64($hProcess)
+	If Not IsPtr($hProcess) Then Return SetError(1,0,False)
+
+	; Not available on all architectures, but AutoIT uses 'GetProcAddress' here anyway, so no worries about run-time link errors
+	Local $aRet=DllCall($_COMMON_KERNEL32DLL,"bool","IsWow64Process","handle",$hProcess,"bool*",0)
+	If @error Then
+		; Function could not be found (using GetProcAddress), most definitely indicating the function doesn't exist,
+		;	hence, not an x64 O/S  [function IS available on some x86 O/S's, but that's what the next steps are for)
+		If @error=3 Then Return False
+		Return SetError(2,@error,False)	; some other error
+	EndIf
+	If Not $aRet[0] Then Return SetError(3,0,False)	; API returned 'fail'
+	Return $aRet[2]	; non-zero = Wow64, 0 = not
+EndFunc
+
+
 #cs ; notes
 
 	HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CrashControl
