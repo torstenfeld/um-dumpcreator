@@ -401,7 +401,7 @@ Func _DcGui()
 
 				If GUICtrlRead($RadioProcessWaiting) = $GUI_CHECKED Then
 					Local $lProcessId = ProcessWait($sInputBoxAnswer)
-					MsgBox(0, "test", GUICtrlRead($sInputBoxAnswer)) ;test
+;~ 					MsgBox(0, "test", GUICtrlRead($sInputBoxAnswer)) ;test
 					Local $lhProcess = _ProcessOpen($lProcessId, 0x00001000)
 				Else
 					Local $lhProcess = _ProcessOpen(StringRegExpReplace(GUICtrlRead($ComboProcesses), ".*\((\d*)\).*", "$1"), 0x00001000)
