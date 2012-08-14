@@ -679,22 +679,28 @@ Func _DebugToolsCheckInstalled(ByRef $laDbtInfoArray) ; returns 1 if installed
 
 	; filename, download size, installed, x64
 	For $i = 0 To UBound($laDbtInfoArray)-1
-		$lRegUninstallBase = "HKLM"
-;~ 		If @OSArch = "X64" Then $lRegUninstallBase &= "64"
-		If $laDbtInfoArray[$i][3] Then $lRegUninstallBase &= "64"
-		$lRegUninstallBase &= "\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+;~ 		$lRegUninstallBase = "HKLM"
+;~ 		If $laDbtInfoArray[$i][3] Then $lRegUninstallBase &= "64"
+;~ 		$lRegUninstallBase &= "\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+
+		$lRegUninstallBase = "HKLM\SOFTWARE"
+		If Not $laDbtInfoArray[$i][3] Then $lRegUninstallBase &= "\Wow6432Node"
+		$lRegUninstallBase &= "\Microsoft\Windows\CurrentVersion\Uninstall\"
 
 		For $j = 1 To 9999999999
 			$lRegSubKey = RegEnumKey($lRegUninstallBase, $j)
 			If @error <> 0 Then ExitLoop
 			$lRegValue = RegRead($lRegUninstallBase & $lRegSubKey, "DisplayName")
 			If StringInStr($lRegValue, "Debugging Tools for Windows") Then
+;~ 				MsgBox(0, "test", $lRegUninstallBase & $lRegSubKey)
 				$laDbtInfoArray[$i][2] = 1
 				$lDbgToolsFound += 1
 				ExitLoop
 			EndIf
 		Next
 	Next
+;~ 	_ArrayDisplay($laDbtInfoArray, "$laDbtInfoArray")
+;~ 	Exit
 
 ;~ 	MsgBox(0, "test", "UBound($laDbtInfoArray): " & UBound($laDbtInfoArray) & @CRLF & _
 ;~ 		"$lDbgToolsFound: " & $lDbgToolsFound) ;test
@@ -723,14 +729,20 @@ Func _DebugToolsDownload(ByRef $laDbtInfoArray) ; returns 1 if files were succes
 	Local $lDownloadCurrentSizeLoading
 	Local $lDownloadPerCent
 	Local $lhDownload
+	Local $lSkippedArrayEntries = 0
 
 	For $i = 0 To $lNumberOfLoops
+		If $laDbtInfoArray[$i][2] Then ; skip if version already installed
+			$lSkippedArrayEntries += 1
+			ContinueLoop
+		EndIf
 		$laDbtInfoArray[$i][1] = InetGetSize($lDbtUrlBase & $laDbtInfoArray[$i][0], 11) / 1024
 		$lDownloadTotalSize += $laDbtInfoArray[$i][1]
 	Next
 
 	For $i = 0 To $lNumberOfLoops
 
+		If $laDbtInfoArray[$i][2] Then ContinueLoop ; skip if version already installed
 		$lhDownload = InetGet($lDbtUrlBase & $laDbtInfoArray[$i][0], $gDirTemp & "\" & $laDbtInfoArray[$i][0], 27, 1)
 
 		If $i = 0 Then
@@ -765,7 +777,7 @@ Func _DebugToolsDownload(ByRef $laDbtInfoArray) ; returns 1 if files were succes
 	Sleep(500)
 	ProgressOff()
 
-	If $lDownloadSuccess = ($lNumberOfLoops+1) then
+	If $lDownloadSuccess = ($lNumberOfLoops + 1 - $lSkippedArrayEntries) then
 		MsgBox(64,$gTitleMsgBox,"Download of Windows Debugging Tools successfull.")
 		Return 1
 	Else
@@ -781,6 +793,7 @@ Func _DebugToolsInstall(ByRef $laDbtInfoArray) ; returns 1 if install was succes
 ;~ 	RunWait(@ComSpec & " /c " & $lMsiToInstall & " /qn /lv* " & $gDirTemp & "\windbgt-install.log", "", @SW_HIDE)
 	SplashTextOn($gTitleMsgBox, "Installing Debugging Tools for Windows", 300, 150)
 	For $i = 0 To UBound($laDbtInfoArray)-1
+		If $laDbtInfoArray[$i][2] Then ContinueLoop
 		ControlSetText($gTitleMsgBox, "", "Static1", "Installing Debugging Tools for Windows (" & $laDbtInfoArray[$i][0] & ")")
 		RunWait(@ComSpec & " /c " & $gDirTemp & "\" & $laDbtInfoArray[$i][0] & " /qn /lv* " & $gDirTemp & "\windbgt-install-" & $laDbtInfoArray[$i][0] & ".log", "", @SW_HIDE)
 	next
