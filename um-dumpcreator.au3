@@ -107,7 +107,9 @@ Func _DcMain()
 	_CheckForUpdate()
 
 	_DebugToolsMain()
-	_DebugToolsGetInstallFolder()
+	MsgBox(0, "test", "$gDirDebuggingToolsx64:" & $gDirDebuggingToolsx64 & @CRLF & "$gDirDebuggingToolsx86: " & $gDirDebuggingToolsx86)
+	Exit
+;~ 	_DebugToolsGetInstallFolder()
 
 	_ProcessGetList()
 
@@ -640,6 +642,7 @@ Func _DebugToolsMain()
 	If _DebugToolsCheckInstalled($laDbtInfoArray) Then
 ;~ 		MsgBox(64, "Dump Configurator", "Windows Debugging Tools are already installed. Skipping installation.") ;test
 		$gInstalledDebuggingTools = True
+		_DebugToolsGetInstallFolder($laDbtInfoArray)
 		Return 1 ;test
 	Else
 		If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
@@ -655,10 +658,9 @@ Func _DebugToolsMain()
 
 
 ;~ 	Exit ; test
-
-
 	If _DebugToolsInstall($laDbtInfoArray) Then
 		$gInstalledDebuggingTools = True
+		_DebugToolsGetInstallFolder($laDbtInfoArray)
 		Return 1
 	Else
 		$gInstalledDebuggingTools = False
@@ -828,9 +830,9 @@ Func _DebugToolsGetInstallFolder(ByRef $laDbtInfoArray)
 			EndIf
 		Else
 			If $laDbtInfoArray[$i][3] Then ; if file is x64
-				$gDirDebuggingToolsx64 = $lPathToDebuggingTools & "\" & $laFolders[$lArrayIndex]
+				$gDirDebuggingToolsx64 = $gDirProgramFilesx64 & "\" & $laFolders[$lArrayIndex]
 			Else
-				$gDirDebuggingToolsx86 = $lPathToDebuggingTools & "\" & $laFolders[$lArrayIndex]
+				$gDirDebuggingToolsx86 = $gDirProgramFilesx86 & "\" & $laFolders[$lArrayIndex]
 			EndIf
 		EndIf
 	Next
