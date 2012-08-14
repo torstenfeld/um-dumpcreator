@@ -14,6 +14,7 @@
 #AutoIt3Wrapper_Res_requestedExecutionLevel=requireAdministrator
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 
+AutoItSetOption("TrayIconDebug", 1)
 
 #region ### includes
 
@@ -51,6 +52,8 @@
 
 	Global $gDirTemp = @TempDir & "\dumpconfigurator"
 	Global $gDirUserManualDump
+	Global $gDirProgramFilesx86 = EnvGet("ProgramFiles(x86)")
+	Global $gDirProgramFilesx64 = EnvGet("ProgramFiles")
 	Global $gFileIniValuesSave = $gDirTemp & "\savedvalues.ini"
 
 	Global $gUrlDownloadTool = "https://github.com/torstenfeld/um-dumpcreator/downloads"
@@ -90,7 +93,6 @@
 #endregion
 
 Func _DcMain()
-
 
 	_ArchCheck()
 
@@ -626,7 +628,15 @@ EndFunc
 
 Func _DebugToolsMain()
 
-	If _DebugToolsCheckInstalled() Then
+	If @OSArch = "X64" Then
+		; filename, download size, installed, x64
+		Local $laDbtInfoArray[2][4] = [["dbg_x86", "", 0, 0], ["dbg_amd64", "", 0, 1]]
+	else
+		Local $laDbtInfoArray[1][4] = [["dbg_x86", "", 0, 0]]
+	EndIf
+
+
+	If _DebugToolsCheckInstalled($laDbtInfoArray) Then
 ;~ 		MsgBox(64, "Dump Configurator", "Windows Debugging Tools are already installed. Skipping installation.") ;test
 		$gInstalledDebuggingTools = True
 		Return 1
@@ -641,32 +651,48 @@ Func _DebugToolsMain()
 		EndSelect
 	EndIf
 	Local $lMsiToInstall = _DebugToolsDownload()
-	If _DebugToolsInstall($lMsiToInstall) Then
+	If _DebugToolsInstall($lMsiToInstall, $laDbtInfoArray) Then
 		$gInstalledDebuggingTools = True
+		Return 1
 	Else
 		$gInstalledDebuggingTools = False
+		Return SetError(2, 0, 0)
 	EndIf
 
 EndFunc
 
-Func _DebugToolsCheckInstalled() ; returns 1 if installed
+Func _DebugToolsCheckInstalled(ByRef $laDbtInfoArray) ; returns 1 if installed
 
-	Local $lRegUninstallBase = "HKLM"
-	If @OSArch = "X64" Then $lRegUninstallBase &= "64"
-	$lRegUninstallBase &= "\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+	Local $lRegUninstallBase
+	Local $lRegSubKey, $lRegValue, $lDbgToolsFound = 0
 
-	Local $lDbgToolsFound = 0
-	Local $lRegSubKey, $lRegValue
+	; filename, download size, installed, x64
+	For $i = 0 To UBound($laDbtInfoArray)-1
+		$lRegUninstallBase = "HKLM"
+;~ 		If @OSArch = "X64" Then $lRegUninstallBase &= "64"
+		If $laDbtInfoArray[$i][3] Then $lRegUninstallBase &= "64"
+		$lRegUninstallBase &= "\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
 
-	For $i = 1 To 9999999999
-		$lRegSubKey = RegEnumKey($lRegUninstallBase, $i)
-		If @error <> 0 Then ExitLoop
-		$lRegValue = RegRead($lRegUninstallBase & $lRegSubKey, "DisplayName")
-		If StringInStr($lRegValue, "Debugging Tools for Windows") Then
-			$lDbgToolsFound = 1
-			ExitLoop
-		EndIf
+		For $j = 1 To 9999999999
+			$lRegSubKey = RegEnumKey($lRegUninstallBase, $j)
+			If @error <> 0 Then ExitLoop
+			$lRegValue = RegRead($lRegUninstallBase & $lRegSubKey, "DisplayName")
+			If StringInStr($lRegValue, "Debugging Tools for Windows") Then
+				$laDbtInfoArray[$i][3] = 1
+				$lDbgToolsFound += 1
+				ExitLoop
+			EndIf
+		Next
 	Next
+
+;~ 	MsgBox(0, "test", "UBound($laDbtInfoArray): " & UBound($laDbtInfoArray) & @CRLF & _
+;~ 		"$lDbgToolsFound: " & $lDbgToolsFound) ;test
+
+	If $lDbgToolsFound = UBound($laDbtInfoArray) then
+		$lDbgToolsFound = 1
+	Else
+		$lDbgToolsFound = 0
+	EndIf
 
 	Return $lDbgToolsFound
 
@@ -721,13 +747,13 @@ Func _DebugToolsDownload() ; returns filename if file was successfully loaded an
 
 EndFunc
 
-Func _DebugToolsInstall($lMsiToInstall) ; returns 1 if install was successfull
+Func _DebugToolsInstall($lMsiToInstall, ByRef $laDbtInfoArray) ; returns 1 if install was successfull
 
 	RunWait(@ComSpec & " /c " & $lMsiToInstall & " /qn /lv* " & $gDirTemp & "\windbgt-install.log", "", @SW_HIDE)
 
 	Sleep(2000)
 
-	If _DebugToolsCheckInstalled() Then
+	If _DebugToolsCheckInstalled($laDbtInfoArray) Then
 		MsgBox(64,$gTitleMsgBox,"Installation of Windows Debugging Tools finished successfully.",15)
 		Return 1
 	Else
