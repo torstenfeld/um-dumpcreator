@@ -630,16 +630,16 @@ Func _DebugToolsMain()
 
 	If @OSArch = "X64" Then
 		; filename, download size, installed, x64
-		Local $laDbtInfoArray[2][4] = [["dbg_x86", "", 0, 0], ["dbg_amd64", "", 0, 1]]
+		Local $laDbtInfoArray[2][4] = [["dbg_x86.msi", "", 0, 0], ["dbg_amd64.msi", "", 0, 1]]
 	else
-		Local $laDbtInfoArray[1][4] = [["dbg_x86", "", 0, 0]]
+		Local $laDbtInfoArray[1][4] = [["dbg_x86.msi", "", 0, 0]]
 	EndIf
 
 
 	If _DebugToolsCheckInstalled($laDbtInfoArray) Then
 ;~ 		MsgBox(64, "Dump Configurator", "Windows Debugging Tools are already installed. Skipping installation.") ;test
 		$gInstalledDebuggingTools = True
-		Return 1
+;~ 		Return 1 ;test
 	Else
 		If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
 		$iMsgBoxAnswer = MsgBox(36,$gTitleMsgBox,"Windows Debugging Tools are not installed, which are needed for user dump creation. " & @CRLF & "Would you like to install Windows Debugging Tools now?")
@@ -650,8 +650,13 @@ Func _DebugToolsMain()
 				Return SetError(1, 0, 0)
 		EndSelect
 	EndIf
-	Local $lMsiToInstall = _DebugToolsDownload()
-	If _DebugToolsInstall($lMsiToInstall, $laDbtInfoArray) Then
+	If Not _DebugToolsDownload($laDbtInfoArray) Then Return SetError(3, 0, 0)
+
+
+;~ 	Exit ; test
+
+
+	If _DebugToolsInstall($laDbtInfoArray) Then
 		$gInstalledDebuggingTools = True
 		Return 1
 	Else
@@ -678,7 +683,7 @@ Func _DebugToolsCheckInstalled(ByRef $laDbtInfoArray) ; returns 1 if installed
 			If @error <> 0 Then ExitLoop
 			$lRegValue = RegRead($lRegUninstallBase & $lRegSubKey, "DisplayName")
 			If StringInStr($lRegValue, "Debugging Tools for Windows") Then
-				$laDbtInfoArray[$i][3] = 1
+				$laDbtInfoArray[$i][2] = 1
 				$lDbgToolsFound += 1
 				ExitLoop
 			EndIf
@@ -698,57 +703,74 @@ Func _DebugToolsCheckInstalled(ByRef $laDbtInfoArray) ; returns 1 if installed
 
 EndFunc
 
-Func _DebugToolsDownload() ; returns filename if file was successfully loaded and sets error if not
+Func _DebugToolsDownload(ByRef $laDbtInfoArray) ; returns 1 if files were successfully loaded and sets error if not
+
+	; filename, download size, installed, x64
 
 	Local $lDownloadSuccess = 0
 	Local $lDbtUrlBase = "https://github.com/downloads/torstenfeld/um-dumpcreator/"
-	Local $lDbtUrlFile = "dbg_"
-	Switch @OSArch
-		Case "X64"
-			$lDbtUrlFile &= "amd64.msi"
-		Case "X86"
-			$lDbtUrlFile &= "x86.msi"
-		Case "IA64"
-			$lDbtUrlFile &= "ia64.msi"
-		Case Else
-			MsgBox(16,$gTitleMsgBox,"Your OS architecture is not supported. " & @CRLF & "Windows Debugging Tools will not be installed.",15)
-			Return SetError(1, 0, 0)
-	EndSwitch
-
-	Local $lhDownload = InetGet($lDbtUrlBase & $lDbtUrlFile, $gDirTemp & "\" & $lDbtUrlFile, 27, 1)
-	Local $lDownloadTotalSize = InetGetSize($lDbtUrlBase & $lDbtUrlFile, 11) / 1024
-	Local $lDownloadCurrentSize = InetGetInfo($lhDownload, 0) / 1024
+;~ 	Local $lDbtUrlFile = "dbg_"
+	Local $lNumberOfLoops = UBound($laDbtInfoArray)-1
+	Local $lDownloadTotalSize = 0
+	Local $lDownloadPreviousSize = 0
+	Local $lDownloadCurrentSize
+	Local $lDownloadCurrentSizeLoading
 	Local $lDownloadPerCent
-	ProgressOn($gTitleMsgBox, "Loading: " & $lDownloadCurrentSize & " \ " & $lDownloadTotalSize & " kBytes", $lDbtUrlBase & $lDbtUrlFile)
-	Do
-		$lDownloadCurrentSize = InetGetInfo($lhDownload, 0) / 1024
-		$lDownloadPerCent = StringFormat("%.0i", ($lDownloadCurrentSize / $lDownloadTotalSize) * 100)
-		ProgressSet($lDownloadPerCent, $lDownloadPerCent & " percent", "Loading: " & $lDownloadCurrentSize & " \ " & $lDownloadTotalSize & " kBytes")
-		Sleep(100)
-	Until InetGetInfo($lhDownload, 2)
-	InetClose($lhDownload) ; Close the handle to release resources.
-;~ 	ProgressSet(100, "Done", "Complete")
+	Local $lhDownload
+
+	For $i = 0 To $lNumberOfLoops
+		$laDbtInfoArray[$i][1] = InetGetSize($lDbtUrlBase & $laDbtInfoArray[$i][0], 11) / 1024
+		$lDownloadTotalSize += $laDbtInfoArray[$i][1]
+	Next
+
+	For $i = 0 To $lNumberOfLoops
+
+		$lhDownload = InetGet($lDbtUrlBase & $laDbtInfoArray[$i][0], $gDirTemp & "\" & $laDbtInfoArray[$i][0], 27, 1)
+
+		If $i = 0 Then
+			$lDownloadCurrentSize = InetGetInfo($lhDownload, 0) / 1024
+			$lDownloadCurrentSizeLoading = $lDownloadPreviousSize + $lDownloadCurrentSize
+			ProgressOn($gTitleMsgBox, "Loading: " & $lDownloadCurrentSizeLoading & " \ " & $lDownloadTotalSize & " kBytes", $lDbtUrlBase & $laDbtInfoArray[$i][0])
+		EndIf
+		Do
+			$lDownloadCurrentSize = InetGetInfo($lhDownload, 0) / 1024
+			$lDownloadCurrentSizeLoading = $lDownloadPreviousSize + $lDownloadCurrentSize
+			$lDownloadPerCent = StringFormat("%.0i", ($lDownloadCurrentSizeLoading / $lDownloadTotalSize) * 100)
+			ProgressSet($lDownloadPerCent, $lDownloadPerCent & " percent", "Loading: " & $lDownloadCurrentSizeLoading & " \ " & $lDownloadTotalSize & " kBytes")
+			Sleep(100)
+		Until InetGetInfo($lhDownload, 2)
+		$lDownloadPreviousSize = $lDownloadCurrentSizeLoading
+		InetClose($lhDownload) ; Close the handle to release resources.
+;~ 		ProgressSet(100, "Done", "Complete")
+
+		If FileExists($gDirTemp & "\" & $laDbtInfoArray[$i][0]) Then
+			Local $lFileSizeLocally = FileGetSize($gDirTemp & "\" & $laDbtInfoArray[$i][0])
+			If ($lFileSizeLocally / 1024) = $laDbtInfoArray[$i][1] Then
+				$lDownloadSuccess += 1
+			Else
+				MsgBox(16,$gTitleMsgBox,"Download of Windows Debugging Tools was not completed (" & $laDbtInfoArray[$i][0] & ").")
+				Return SetError(2, 0, 0)
+			EndIf
+		Else
+			MsgBox(16,$gTitleMsgBox,"Download of Windows Debugging Tools failed. (" & $laDbtInfoArray[$i][0] & ")")
+			Return SetError(3, 0, 0)
+		EndIf
+	Next
 	Sleep(500)
 	ProgressOff()
 
-	If FileExists($gDirTemp & "\" & $lDbtUrlFile) Then
-		Local $lFileSizeLocally = FileGetSize($gDirTemp & "\" & $lDbtUrlFile)
-		If ($lFileSizeLocally / 1024) = $lDownloadTotalSize Then
-			MsgBox(64,$gTitleMsgBox,"Download of Windows Debugging Tools successfull.")
-			Return $gDirTemp & "\" & $lDbtUrlFile
-		Else
-			MsgBox(16,$gTitleMsgBox,"Download of Windows Debugging Tools was not completed.")
-			Return SetError(2, 0, 0)
-		EndIf
+	If $lDownloadSuccess = ($lNumberOfLoops+1) then
+		MsgBox(64,$gTitleMsgBox,"Download of Windows Debugging Tools successfull.")
+		Return 1
 	Else
 		MsgBox(16,$gTitleMsgBox,"Download of Windows Debugging Tools failed.")
-		Return SetError(3, 0, 0)
+		Return SetError(4, 0, 0)
 	EndIf
-
 EndFunc
 
-Func _DebugToolsInstall($lMsiToInstall, ByRef $laDbtInfoArray) ; returns 1 if install was successfull
+Func _DebugToolsInstall(ByRef $laDbtInfoArray) ; returns 1 if install was successfull
 
+	Local $lMsiToInstall ;test
 	RunWait(@ComSpec & " /c " & $lMsiToInstall & " /qn /lv* " & $gDirTemp & "\windbgt-install.log", "", @SW_HIDE)
 
 	Sleep(2000)
