@@ -1,14 +1,13 @@
 #RequireAdmin
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_Icon=favicon.ico
-#AutoIt3Wrapper_Outfile=dumpconfigurator-1.0.0.12-x86.exe
-#AutoIt3Wrapper_Outfile_x64=dumpconfigurator-1.0.0.12-x64.exe
+#AutoIt3Wrapper_Outfile=dumpconfigurator-1.0.0.13-x86.exe
+#AutoIt3Wrapper_Outfile_x64=dumpconfigurator-1.0.0.13-x64.exe
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Compile_Both=y
-#AutoIt3Wrapper_UseX64=y
 #AutoIt3Wrapper_Res_Comment=Sets registry settings for automatic creation of user dumps
 #AutoIt3Wrapper_Res_Description=Sets registry settings for automatic creation of user dumps
-#AutoIt3Wrapper_Res_Fileversion=1.0.0.13
+#AutoIt3Wrapper_Res_Fileversion=1.0.0.14
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_LegalCopyright=Copyright © 2011 Torsten Feld - All rights reserved.
 #AutoIt3Wrapper_Res_requestedExecutionLevel=requireAdministrator
@@ -107,7 +106,7 @@ Func _DcMain()
 	_CheckForUpdate()
 
 	_DebugToolsMain()
-	MsgBox(0, "test", "$gDirDebuggingToolsx64:" & $gDirDebuggingToolsx64 & @CRLF & "$gDirDebuggingToolsx86: " & $gDirDebuggingToolsx86)
+;~ 	MsgBox(0, "test", "$gDirDebuggingToolsx64:" & $gDirDebuggingToolsx64 & @CRLF & "$gDirDebuggingToolsx86: " & $gDirDebuggingToolsx86)
 ;~ 	_DebugToolsGetInstallFolder()
 
 	_ProcessGetList()
@@ -364,16 +363,6 @@ Func _DcGui()
 				If @error Then ContinueLoop
 				GUICtrlSetData($InputUserLocation, $gDirUserManualDump)
 			Case $ButtonUserCreateDump
-
-				;test start
-				Local $lhProcess = _ProcessOpen(StringRegExpReplace(GUICtrlRead($ComboProcesses), ".*\((\d*)\).*", "$1"), 0x00001000)
-				Local $lProcessArch = _ProcessIsWow64($lhProcess) ; 1 if x86 proc on x64 os
-				_ProcessCloseHandle($lhProcess)
-				MsgBox(0, "test", $lProcessArch)
-				ContinueLoop ;test
-				;test end
-
-
 				IniWrite($gFileIniValuesSave, "UserModeManual", "DumpLocation", GUICtrlRead($InputUserLocation))
 				If GUICtrlRead($ComboProcesses) = "" Then
 					If GUICtrlRead($RadioProcessExists) = $GUI_CHECKED Then
@@ -385,7 +374,7 @@ Func _DcGui()
 					MsgBox(0, $gTitleMsgBox, "error") ;test
 					ContinueLoop
 				EndIf
-				Local $lFileAdPlus = $gDirDebuggingToolsx86 & "\adplus.exe" ;error as not x86 / x64 chosen
+
 
 				If GUICtrlRead($RadioUserCrash) = $GUI_CHECKED Then
 					$lAdPlusParameters = " -Crash"
@@ -409,6 +398,21 @@ Func _DcGui()
 				 $lAdPlusParameters &= ' -o "' & GUICtrlRead($InputUserLocation) & _
 					'" -FullOnFirst -lcqd'
 ;~ 					'" -FullOnFirst -CTCFB'
+
+				If GUICtrlRead($RadioProcessWaiting) = $GUI_CHECKED Then
+					Local $lProcessId = ProcessWait($sInputBoxAnswer)
+					MsgBox(0, "test", GUICtrlRead($sInputBoxAnswer)) ;test
+					Local $lhProcess = _ProcessOpen($lProcessId, 0x00001000)
+				Else
+					Local $lhProcess = _ProcessOpen(StringRegExpReplace(GUICtrlRead($ComboProcesses), ".*\((\d*)\).*", "$1"), 0x00001000)
+				EndIf
+				Local $lProcessArch = _ProcessIsWow64($lhProcess) ; 1 if x86 proc on x64 os
+				_ProcessCloseHandle($lhProcess)
+				If $lProcessArch Then
+					Local $lFileAdPlus = $gDirDebuggingToolsx86 & "\adplus.exe" ;error as not x86 / x64 chosen
+				Else
+					Local $lFileAdPlus = $gDirDebuggingToolsx64 & "\adplus.exe" ;error as not x86 / x64 chosen
+				EndIf
 
 ;~ 				Run(@ComSpec & ' /c ' & FileGetShortName($lFileAdPlus) & $lAdPlusParameters);, @SW_HIDE)
 				Local $lOutputRun = Run(FileGetShortName($lFileAdPlus) & $lAdPlusParameters);, @SW_MAXIMIZE, $STDERR_CHILD + $STDOUT_CHILD)
