@@ -639,7 +639,7 @@ Func _DebugToolsMain()
 	If _DebugToolsCheckInstalled($laDbtInfoArray) Then
 ;~ 		MsgBox(64, "Dump Configurator", "Windows Debugging Tools are already installed. Skipping installation.") ;test
 		$gInstalledDebuggingTools = True
-;~ 		Return 1 ;test
+		Return 1 ;test
 	Else
 		If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
 		$iMsgBoxAnswer = MsgBox(36,$gTitleMsgBox,"Windows Debugging Tools are not installed, which are needed for user dump creation. " & @CRLF & "Would you like to install Windows Debugging Tools now?")
@@ -770,8 +770,12 @@ EndFunc
 
 Func _DebugToolsInstall(ByRef $laDbtInfoArray) ; returns 1 if install was successfull
 
-	Local $lMsiToInstall ;test
-	RunWait(@ComSpec & " /c " & $lMsiToInstall & " /qn /lv* " & $gDirTemp & "\windbgt-install.log", "", @SW_HIDE)
+	; filename, download size, installed, x64
+
+;~ 	RunWait(@ComSpec & " /c " & $lMsiToInstall & " /qn /lv* " & $gDirTemp & "\windbgt-install.log", "", @SW_HIDE)
+	For $i = 0 To UBound($laDbtInfoArray)-1
+		RunWait(@ComSpec & " /c " & $gDirTemp & "\" & $laDbtInfoArray[$i][0] & " /qn /lv* " & $gDirTemp & "\windbgt-install-" & $laDbtInfoArray[$i][0] & ".log", "", @SW_HIDE)
+	next
 
 	Sleep(2000)
 
