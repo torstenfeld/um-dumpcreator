@@ -108,7 +108,6 @@ Func _DcMain()
 
 	_DebugToolsMain()
 	MsgBox(0, "test", "$gDirDebuggingToolsx64:" & $gDirDebuggingToolsx64 & @CRLF & "$gDirDebuggingToolsx86: " & $gDirDebuggingToolsx86)
-	Exit
 ;~ 	_DebugToolsGetInstallFolder()
 
 	_ProcessGetList()
@@ -816,10 +815,18 @@ Func _DebugToolsGetInstallFolder(ByRef $laDbtInfoArray)
 			$lPathToDebuggingTools = IniRead($gFileIniValuesSave, "UserModeManual", "WdtPath", "")
 			If $lPathToDebuggingTools <> "" Then Return 1
 
-			$lPathToDebuggingTools = FileSelectFolder("Windows Debugging Tools (" & $laDbtInfoArray[$i][0] & ") installation folder could not be found. Please choose folder by yourself.", "", 6, @ProgramFilesDir)
-			If @error Then
-				$gInstalledDebuggingTools = false
-				Return SetError(1, 0, 0)
+			If $laDbtInfoArray[$i][3] Then
+				$lPathToDebuggingTools = FileSelectFolder("Windows Debugging Tools for x64 installation folder could not be found. Please choose folder by yourself.", "", 6, $gDirProgramFilesx64)
+				If @error Then
+					$gInstalledDebuggingTools = false
+					Return SetError(1, 1, 0)
+				EndIf
+			Else
+				$lPathToDebuggingTools = FileSelectFolder("Windows Debugging Tools for x86 installation folder could not be found. Please choose folder by yourself.", "", 6, $gDirProgramFilesx86)
+				If @error Then
+					$gInstalledDebuggingTools = false
+					Return SetError(1, 2, 0)
+				EndIf
 			EndIf
 			If Not FileExists($lPathToDebuggingTools & "\adplus.exe") Or Not FileExists($lPathToDebuggingTools & "\cdb.exe") Then
 				MsgBox(16,$gTitleMsgBox,"The directory you entered seems not to be a valid Debugging Tools for Windows (" & $laDbtInfoArray[$i][0] & ") installation folder.")
