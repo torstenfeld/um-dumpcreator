@@ -1,19 +1,19 @@
 #RequireAdmin
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_Icon=favicon.ico
-#AutoIt3Wrapper_Outfile=dumpconfigurator-1.0.0.12-x86.exe
-#AutoIt3Wrapper_Outfile_x64=dumpconfigurator-1.0.0.12-x64.exe
+#AutoIt3Wrapper_Outfile=dumpconfigurator-1.1.0.14-x86.exe
+#AutoIt3Wrapper_Outfile_x64=dumpconfigurator-1.1.0.14-x64.exe
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Compile_Both=y
-#AutoIt3Wrapper_UseX64=y
 #AutoIt3Wrapper_Res_Comment=Sets registry settings for automatic creation of user dumps
 #AutoIt3Wrapper_Res_Description=Sets registry settings for automatic creation of user dumps
-#AutoIt3Wrapper_Res_Fileversion=1.0.0.13
+#AutoIt3Wrapper_Res_Fileversion=1.1.0.14
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
 #AutoIt3Wrapper_Res_LegalCopyright=Copyright © 2011 Torsten Feld - All rights reserved.
 #AutoIt3Wrapper_Res_requestedExecutionLevel=requireAdministrator
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 
+AutoItSetOption("TrayIconDebug", 1)
 
 #region ### includes
 
@@ -51,6 +51,8 @@
 
 	Global $gDirTemp = @TempDir & "\dumpconfigurator"
 	Global $gDirUserManualDump
+	Global $gDirProgramFilesx86 = EnvGet("ProgramFiles(x86)")
+	Global $gDirProgramFilesx64 = EnvGet("ProgramFiles")
 	Global $gFileIniValuesSave = $gDirTemp & "\savedvalues.ini"
 
 	Global $gUrlDownloadTool = "https://github.com/torstenfeld/um-dumpcreator/downloads"
@@ -61,7 +63,8 @@
 	Global $gaProcesses
 	Global $gPreVista = False
 	Global $gInstalledDebuggingTools
-	Global $gDirDebuggingTools
+	Global $gDirDebuggingToolsx64
+	Global $gDirDebuggingToolsx86
 
 	Global $pos1 = MouseGetPos()
 	Global $pos2 = MouseGetPos() ; must be initialized
@@ -73,6 +76,8 @@
 	Global $gProcessCrashed
 
 	Global $ComboProcesses
+
+	Global $_COMMON_KERNEL32DLL=DllOpen("kernel32.dll")		; DLLClose() will be done automatically on exit. [this doesn't reload the DLL]
 
 #endregion
 
@@ -89,7 +94,6 @@
 
 Func _DcMain()
 
-
 	_ArchCheck()
 
 	If @Compiled Then
@@ -102,7 +106,8 @@ Func _DcMain()
 	_CheckForUpdate()
 
 	_DebugToolsMain()
-	_DebugToolsGetInstallFolder()
+;~ 	MsgBox(0, "test", "$gDirDebuggingToolsx64:" & $gDirDebuggingToolsx64 & @CRLF & "$gDirDebuggingToolsx86: " & $gDirDebuggingToolsx86)
+;~ 	_DebugToolsGetInstallFolder()
 
 	_ProcessGetList()
 
@@ -361,15 +366,20 @@ Func _DcGui()
 				IniWrite($gFileIniValuesSave, "UserModeManual", "DumpLocation", GUICtrlRead($InputUserLocation))
 				If GUICtrlRead($ComboProcesses) = "" Then
 					If GUICtrlRead($RadioProcessExists) = $GUI_CHECKED Then
-						MsgBox(0, $gTitleMsgBox, "error") ;test
+						MsgBox(16,$gTitleMsgBox,"You did not specify a process to be dumped. Please choose a process in the dropdown menu.")
 						ContinueLoop
 					EndIf
 				EndIf
 				If Not FileExists(GUICtrlRead($InputUserLocation)) Then
-					MsgBox(0, $gTitleMsgBox, "error") ;test
-					ContinueLoop
+					If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
+					$iMsgBoxAnswer = MsgBox(52,$gTitleMsgBox,"The directory you specified was not found. Would you like to have it created for you?")
+					Select
+						Case $iMsgBoxAnswer = 6 ;Yes
+							DirCreate(GUICtrlRead($InputUserLocation))
+						Case $iMsgBoxAnswer = 7 ;No
+							ContinueLoop
+					EndSelect
 				EndIf
-				Local $lFileAdPlus = $gDirDebuggingTools & "\adplus.exe"
 
 				If GUICtrlRead($RadioUserCrash) = $GUI_CHECKED Then
 					$lAdPlusParameters = " -Crash"
@@ -393,6 +403,20 @@ Func _DcGui()
 				 $lAdPlusParameters &= ' -o "' & GUICtrlRead($InputUserLocation) & _
 					'" -FullOnFirst -lcqd'
 ;~ 					'" -FullOnFirst -CTCFB'
+
+				If GUICtrlRead($RadioProcessWaiting) = $GUI_CHECKED Then
+					Local $lProcessId = ProcessWait($sInputBoxAnswer)
+					Local $lhProcess = _ProcessOpen($lProcessId, 0x00001000)
+				Else
+					Local $lhProcess = _ProcessOpen(StringRegExpReplace(GUICtrlRead($ComboProcesses), ".*\((\d*)\).*", "$1"), 0x00001000)
+				EndIf
+				Local $lProcessArch = _ProcessIsWow64($lhProcess) ; 1 if x86 proc on x64 os
+				_ProcessCloseHandle($lhProcess)
+				If $lProcessArch Then
+					Local $lFileAdPlus = $gDirDebuggingToolsx86 & "\adplus.exe" ;error as not x86 / x64 chosen
+				Else
+					Local $lFileAdPlus = $gDirDebuggingToolsx64 & "\adplus.exe" ;error as not x86 / x64 chosen
+				EndIf
 
 ;~ 				Run(@ComSpec & ' /c ' & FileGetShortName($lFileAdPlus) & $lAdPlusParameters);, @SW_HIDE)
 				Local $lOutputRun = Run(FileGetShortName($lFileAdPlus) & $lAdPlusParameters);, @SW_MAXIMIZE, $STDERR_CHILD + $STDOUT_CHILD)
@@ -614,10 +638,19 @@ EndFunc
 
 Func _DebugToolsMain()
 
-	If _DebugToolsCheckInstalled() Then
+	If @OSArch = "X64" Then
+		; filename, download size, installed, x64
+		Local $laDbtInfoArray[2][4] = [["dbg_x86.msi", "", 0, 0], ["dbg_amd64.msi", "", 0, 1]]
+	else
+		Local $laDbtInfoArray[1][4] = [["dbg_x86.msi", "", 0, 0]]
+	EndIf
+
+
+	If _DebugToolsCheckInstalled($laDbtInfoArray) Then
 ;~ 		MsgBox(64, "Dump Configurator", "Windows Debugging Tools are already installed. Skipping installation.") ;test
 		$gInstalledDebuggingTools = True
-		Return 1
+		_DebugToolsGetInstallFolder($laDbtInfoArray)
+		Return 1 ;test
 	Else
 		If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
 		$iMsgBoxAnswer = MsgBox(36,$gTitleMsgBox,"Windows Debugging Tools are not installed, which are needed for user dump creation. " & @CRLF & "Would you like to install Windows Debugging Tools now?")
@@ -628,94 +661,151 @@ Func _DebugToolsMain()
 				Return SetError(1, 0, 0)
 		EndSelect
 	EndIf
-	Local $lMsiToInstall = _DebugToolsDownload()
-	If _DebugToolsInstall($lMsiToInstall) Then
+	If Not _DebugToolsDownload($laDbtInfoArray) Then Return SetError(3, 0, 0)
+
+
+;~ 	Exit ; test
+	If _DebugToolsInstall($laDbtInfoArray) Then
 		$gInstalledDebuggingTools = True
+		_DebugToolsGetInstallFolder($laDbtInfoArray)
+		Return 1
 	Else
 		$gInstalledDebuggingTools = False
+		Return SetError(2, 0, 0)
 	EndIf
 
 EndFunc
 
-Func _DebugToolsCheckInstalled() ; returns 1 if installed
+Func _DebugToolsCheckInstalled(ByRef $laDbtInfoArray) ; returns 1 if installed
 
-	Local $lRegUninstallBase = "HKLM"
-	If @OSArch = "X64" Then $lRegUninstallBase &= "64"
-	$lRegUninstallBase &= "\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+	Local $lRegUninstallBase
+	Local $lRegSubKey, $lRegValue, $lDbgToolsFound = 0
 
-	Local $lDbgToolsFound = 0
-	Local $lRegSubKey, $lRegValue
+	; filename, download size, installed, x64
+	For $i = 0 To UBound($laDbtInfoArray)-1
+;~ 		$lRegUninstallBase = "HKLM"
+;~ 		If $laDbtInfoArray[$i][3] Then $lRegUninstallBase &= "64"
+;~ 		$lRegUninstallBase &= "\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
 
-	For $i = 1 To 9999999999
-		$lRegSubKey = RegEnumKey($lRegUninstallBase, $i)
-		If @error <> 0 Then ExitLoop
-		$lRegValue = RegRead($lRegUninstallBase & $lRegSubKey, "DisplayName")
-		If StringInStr($lRegValue, "Debugging Tools for Windows") Then
-			$lDbgToolsFound = 1
-			ExitLoop
-		EndIf
+		$lRegUninstallBase = "HKLM\SOFTWARE"
+		If Not $laDbtInfoArray[$i][3] Then $lRegUninstallBase &= "\Wow6432Node"
+		$lRegUninstallBase &= "\Microsoft\Windows\CurrentVersion\Uninstall\"
+
+		For $j = 1 To 9999999999
+			$lRegSubKey = RegEnumKey($lRegUninstallBase, $j)
+			If @error <> 0 Then ExitLoop
+			$lRegValue = RegRead($lRegUninstallBase & $lRegSubKey, "DisplayName")
+			If StringInStr($lRegValue, "Debugging Tools for Windows") Then
+;~ 				MsgBox(0, "test", $lRegUninstallBase & $lRegSubKey)
+				$laDbtInfoArray[$i][2] = 1
+				$lDbgToolsFound += 1
+				ExitLoop
+			EndIf
+		Next
 	Next
+;~ 	_ArrayDisplay($laDbtInfoArray, "$laDbtInfoArray")
+;~ 	Exit
+
+;~ 	MsgBox(0, "test", "UBound($laDbtInfoArray): " & UBound($laDbtInfoArray) & @CRLF & _
+;~ 		"$lDbgToolsFound: " & $lDbgToolsFound) ;test
+
+	If $lDbgToolsFound = UBound($laDbtInfoArray) then
+		$lDbgToolsFound = 1
+	Else
+		$lDbgToolsFound = 0
+	EndIf
 
 	Return $lDbgToolsFound
 
 EndFunc
 
-Func _DebugToolsDownload() ; returns filename if file was successfully loaded and sets error if not
+Func _DebugToolsDownload(ByRef $laDbtInfoArray) ; returns 1 if files were successfully loaded and sets error if not
+
+	; filename, download size, installed, x64
 
 	Local $lDownloadSuccess = 0
 	Local $lDbtUrlBase = "https://github.com/downloads/torstenfeld/um-dumpcreator/"
-	Local $lDbtUrlFile = "dbg_"
-	Switch @OSArch
-		Case "X64"
-			$lDbtUrlFile &= "amd64.msi"
-		Case "X86"
-			$lDbtUrlFile &= "x86.msi"
-		Case "IA64"
-			$lDbtUrlFile &= "ia64.msi"
-		Case Else
-			MsgBox(16,$gTitleMsgBox,"Your OS architecture is not supported. " & @CRLF & "Windows Debugging Tools will not be installed.",15)
-			Return SetError(1, 0, 0)
-	EndSwitch
-
-	Local $lhDownload = InetGet($lDbtUrlBase & $lDbtUrlFile, $gDirTemp & "\" & $lDbtUrlFile, 27, 1)
-	Local $lDownloadTotalSize = InetGetSize($lDbtUrlBase & $lDbtUrlFile, 11) / 1024
-	Local $lDownloadCurrentSize = InetGetInfo($lhDownload, 0) / 1024
+;~ 	Local $lDbtUrlFile = "dbg_"
+	Local $lNumberOfLoops = UBound($laDbtInfoArray)-1
+	Local $lDownloadTotalSize = 0
+	Local $lDownloadPreviousSize = 0
+	Local $lDownloadCurrentSize
+	Local $lDownloadCurrentSizeLoading
 	Local $lDownloadPerCent
-	ProgressOn($gTitleMsgBox, "Loading: " & $lDownloadCurrentSize & " \ " & $lDownloadTotalSize & " kBytes", $lDbtUrlBase & $lDbtUrlFile)
-	Do
-		$lDownloadCurrentSize = InetGetInfo($lhDownload, 0) / 1024
-		$lDownloadPerCent = StringFormat("%.0i", ($lDownloadCurrentSize / $lDownloadTotalSize) * 100)
-		ProgressSet($lDownloadPerCent, $lDownloadPerCent & " percent", "Loading: " & $lDownloadCurrentSize & " \ " & $lDownloadTotalSize & " kBytes")
-		Sleep(100)
-	Until InetGetInfo($lhDownload, 2)
-	InetClose($lhDownload) ; Close the handle to release resources.
-;~ 	ProgressSet(100, "Done", "Complete")
+	Local $lhDownload
+	Local $lSkippedArrayEntries = 0
+
+	For $i = 0 To $lNumberOfLoops
+		If $laDbtInfoArray[$i][2] Then ; skip if version already installed
+			$lSkippedArrayEntries += 1
+			ContinueLoop
+		EndIf
+		$laDbtInfoArray[$i][1] = InetGetSize($lDbtUrlBase & $laDbtInfoArray[$i][0], 11) / 1024
+		$lDownloadTotalSize += $laDbtInfoArray[$i][1]
+	Next
+
+	For $i = 0 To $lNumberOfLoops
+
+		If $laDbtInfoArray[$i][2] Then ContinueLoop ; skip if version already installed
+		$lhDownload = InetGet($lDbtUrlBase & $laDbtInfoArray[$i][0], $gDirTemp & "\" & $laDbtInfoArray[$i][0], 27, 1)
+
+		If $i = 0 Then
+			$lDownloadCurrentSize = InetGetInfo($lhDownload, 0) / 1024
+			$lDownloadCurrentSizeLoading = $lDownloadPreviousSize + $lDownloadCurrentSize
+			ProgressOn($gTitleMsgBox, "Loading: " & $lDownloadCurrentSizeLoading & " \ " & $lDownloadTotalSize & " kBytes", $lDbtUrlBase & $laDbtInfoArray[$i][0])
+		EndIf
+		Do
+			$lDownloadCurrentSize = InetGetInfo($lhDownload, 0) / 1024
+			$lDownloadCurrentSizeLoading = $lDownloadPreviousSize + $lDownloadCurrentSize
+			$lDownloadPerCent = StringFormat("%.0i", ($lDownloadCurrentSizeLoading / $lDownloadTotalSize) * 100)
+			ProgressSet($lDownloadPerCent, $lDownloadPerCent & " percent", "Loading: " & $lDownloadCurrentSizeLoading & " \ " & $lDownloadTotalSize & " kBytes")
+			Sleep(100)
+		Until InetGetInfo($lhDownload, 2)
+		$lDownloadPreviousSize = $lDownloadCurrentSizeLoading
+		InetClose($lhDownload) ; Close the handle to release resources.
+;~ 		ProgressSet(100, "Done", "Complete")
+
+		If FileExists($gDirTemp & "\" & $laDbtInfoArray[$i][0]) Then
+			Local $lFileSizeLocally = FileGetSize($gDirTemp & "\" & $laDbtInfoArray[$i][0])
+			If ($lFileSizeLocally / 1024) = $laDbtInfoArray[$i][1] Then
+				$lDownloadSuccess += 1
+			Else
+				MsgBox(16,$gTitleMsgBox,"Download of Windows Debugging Tools was not completed (" & $laDbtInfoArray[$i][0] & ").")
+				Return SetError(2, 0, 0)
+			EndIf
+		Else
+			MsgBox(16,$gTitleMsgBox,"Download of Windows Debugging Tools failed. (" & $laDbtInfoArray[$i][0] & ")")
+			Return SetError(3, 0, 0)
+		EndIf
+	Next
 	Sleep(500)
 	ProgressOff()
 
-	If FileExists($gDirTemp & "\" & $lDbtUrlFile) Then
-		Local $lFileSizeLocally = FileGetSize($gDirTemp & "\" & $lDbtUrlFile)
-		If ($lFileSizeLocally / 1024) = $lDownloadTotalSize Then
-			MsgBox(64,$gTitleMsgBox,"Download of Windows Debugging Tools successfull.")
-			Return $gDirTemp & "\" & $lDbtUrlFile
-		Else
-			MsgBox(16,$gTitleMsgBox,"Download of Windows Debugging Tools was not completed.")
-			Return SetError(2, 0, 0)
-		EndIf
+	If $lDownloadSuccess = ($lNumberOfLoops + 1 - $lSkippedArrayEntries) then
+		MsgBox(64,$gTitleMsgBox,"Download of Windows Debugging Tools successfull.")
+		Return 1
 	Else
 		MsgBox(16,$gTitleMsgBox,"Download of Windows Debugging Tools failed.")
-		Return SetError(3, 0, 0)
+		Return SetError(4, 0, 0)
 	EndIf
-
 EndFunc
 
-Func _DebugToolsInstall($lMsiToInstall) ; returns 1 if install was successfull
+Func _DebugToolsInstall(ByRef $laDbtInfoArray) ; returns 1 if install was successfull
 
-	RunWait(@ComSpec & " /c " & $lMsiToInstall & " /qn /lv* " & $gDirTemp & "\windbgt-install.log", "", @SW_HIDE)
+	; filename, download size, installed, x64
+
+;~ 	RunWait(@ComSpec & " /c " & $lMsiToInstall & " /qn /lv* " & $gDirTemp & "\windbgt-install.log", "", @SW_HIDE)
+	SplashTextOn($gTitleMsgBox, "Installing Debugging Tools for Windows", 300, 150)
+	For $i = 0 To UBound($laDbtInfoArray)-1
+		If $laDbtInfoArray[$i][2] Then ContinueLoop
+		ControlSetText($gTitleMsgBox, "", "Static1", "Installing Debugging Tools for Windows (" & $laDbtInfoArray[$i][0] & ")")
+		RunWait(@ComSpec & " /c " & $gDirTemp & "\" & $laDbtInfoArray[$i][0] & " /qn /lv* " & $gDirTemp & "\windbgt-install-" & $laDbtInfoArray[$i][0] & ".log", "", @SW_HIDE)
+	next
+	SplashOff()
 
 	Sleep(2000)
 
-	If _DebugToolsCheckInstalled() Then
+	If _DebugToolsCheckInstalled($laDbtInfoArray) Then
 		MsgBox(64,$gTitleMsgBox,"Installation of Windows Debugging Tools finished successfully.",15)
 		Return 1
 	Else
@@ -725,32 +815,55 @@ Func _DebugToolsInstall($lMsiToInstall) ; returns 1 if install was successfull
 
 EndFunc
 
-Func _DebugToolsGetInstallFolder()
+Func _DebugToolsGetInstallFolder(ByRef $laDbtInfoArray)
 
 	If Not $gInstalledDebuggingTools Then Return SetError(2, 0, 0)
 
-	Local $laFolders = _FileListToArray(@ProgramFilesDir, "*", 2)
-;~ 	_ArrayDisplay($laFolders, "$laFolders") ;test
-	$lArrayIndex = _ArraySearch($laFolders, "Debugging Tools for Windows", 1, 0, 0, 1)
-	If @error Then
-		$gDirDebuggingTools = IniRead($gFileIniValuesSave, "UserModeManual", "WdtPath", "")
-		If $gDirDebuggingTools <> "" Then Return 1
+	Local $laFolders, $lPathToDebuggingTools
 
-		$gDirDebuggingTools = FileSelectFolder("Windows Debugging Tools installation folder could not be found. Please choose folder by yourself.", "", 6, @ProgramFilesDir)
-		If @error Then
-			$gInstalledDebuggingTools = false
-			Return SetError(1, 0, 0)
-		EndIf
-		If Not FileExists($gDirDebuggingTools & "\adplus.exe") Or Not FileExists($gDirDebuggingTools & "\cdb.exe") Then
-			MsgBox(16,$gTitleMsgBox,"The directory you entered seems not to be a valid Debugging Tools for Windows installation folder.")
-			$gInstalledDebuggingTools = false
-			Return SetError(2, 0, 0)
+	; filename, download size, installed, x64
+
+	Local $lNumberOfLoops = UBound($laDbtInfoArray)-1
+	For $i = 0 To $lNumberOfLoops
+
+		If $laDbtInfoArray[$i][3] Then ; if file is x64
+			$laFolders = _FileListToArray($gDirProgramFilesx64, "*", 2)
 		Else
-			IniWrite($gFileIniValuesSave, "UserModeManual", "WdtPath", $gDirDebuggingTools)
+			$laFolders = _FileListToArray($gDirProgramFilesx86, "*", 2)
 		EndIf
-	Else
-		$gDirDebuggingTools = @ProgramFilesDir & "\" & $laFolders[$lArrayIndex]
-	EndIf
+		$lArrayIndex = _ArraySearch($laFolders, "Debugging Tools for Windows", 1, 0, 0, 1)
+		If @error Then
+			$lPathToDebuggingTools = IniRead($gFileIniValuesSave, "UserModeManual", "WdtPath", "")
+			If $lPathToDebuggingTools <> "" Then Return 1
+
+			If $laDbtInfoArray[$i][3] Then
+				$lPathToDebuggingTools = FileSelectFolder("Windows Debugging Tools for x64 installation folder could not be found. Please choose folder by yourself.", "", 6, $gDirProgramFilesx64)
+				If @error Then
+					$gInstalledDebuggingTools = false
+					Return SetError(1, 1, 0)
+				EndIf
+			Else
+				$lPathToDebuggingTools = FileSelectFolder("Windows Debugging Tools for x86 installation folder could not be found. Please choose folder by yourself.", "", 6, $gDirProgramFilesx86)
+				If @error Then
+					$gInstalledDebuggingTools = false
+					Return SetError(1, 2, 0)
+				EndIf
+			EndIf
+			If Not FileExists($lPathToDebuggingTools & "\adplus.exe") Or Not FileExists($lPathToDebuggingTools & "\cdb.exe") Then
+				MsgBox(16,$gTitleMsgBox,"The directory you entered seems not to be a valid Debugging Tools for Windows (" & $laDbtInfoArray[$i][0] & ") installation folder.")
+				$gInstalledDebuggingTools = false
+				Return SetError(2, 0, 0)
+			Else
+				IniWrite($gFileIniValuesSave, "UserModeManual", "WdtPath", $lPathToDebuggingTools)
+			EndIf
+		Else
+			If $laDbtInfoArray[$i][3] Then ; if file is x64
+				$gDirDebuggingToolsx64 = $gDirProgramFilesx64 & "\" & $laFolders[$lArrayIndex]
+			Else
+				$gDirDebuggingToolsx86 = $gDirProgramFilesx86 & "\" & $laFolders[$lArrayIndex]
+			EndIf
+		EndIf
+	Next
 
 EndFunc
 
@@ -845,6 +958,59 @@ Func _CheckForUpdate()
 		EndSelect
 	EndIf
 
+EndFunc
+
+Func _ProcessIsWow64($hProcess)
+	If Not IsPtr($hProcess) Then Return SetError(1,0,False)
+
+	; Not available on all architectures, but AutoIT uses 'GetProcAddress' here anyway, so no worries about run-time link errors
+	Local $aRet=DllCall($_COMMON_KERNEL32DLL,"bool","IsWow64Process","handle",$hProcess,"bool*",0)
+	If @error Then
+		; Function could not be found (using GetProcAddress), most definitely indicating the function doesn't exist,
+		;	hence, not an x64 O/S  [function IS available on some x86 O/S's, but that's what the next steps are for)
+		If @error=3 Then Return False
+		Return SetError(2,@error,False)	; some other error
+	EndIf
+	If Not $aRet[0] Then Return SetError(3,0,False)	; API returned 'fail'
+	Return $aRet[2]	; non-zero = Wow64, 0 = not
+EndFunc
+
+Func _ProcessOpen($vProcessID,$iAccess,$bInheritHandle=False)
+	Local $aRet
+	; Special 'Open THIS process' ID?  [returns pseudo-handle from Windows]
+	If $vProcessID=-1 Then
+		$aRet=DllCall($_COMMON_KERNEL32DLL,"handle","GetCurrentProcess")
+		If @error Then Return SetError(2,@error,0)
+		Return $aRet[0]		; usually the constant '-1', but we're keeping it future-OS compatible this way
+	ElseIf Not __PFEnforcePID($vProcessID) Then
+		Return SetError(16,0,0)		; Process does not exist or was invalid
+	EndIf
+	$aRet=DllCall($_COMMON_KERNEL32DLL,"handle","OpenProcess","dword",$iAccess,"bool",$bInheritHandle,"dword",$vProcessID)
+	If @error Then Return SetError(2,@error,0)
+	If Not $aRet[0] Then Return SetError(3,@error,0)
+	Return SetExtended($vProcessID,$aRet[0])	; Return Process ID in @extended in case a process name was passed
+EndFunc
+
+Func _ProcessCloseHandle(ByRef $hProcess)
+	If Not __PFCloseHandle($hProcess) Then Return SetError(@error,@extended,False)
+	Return True
+EndFunc
+
+Func __PFEnforcePID(ByRef $vPID)
+	If IsInt($vPID) Then Return True
+	$vPID=ProcessExists($vPID)
+	If $vPID Then Return True
+	Return SetError(1,0,False)
+EndFunc
+
+Func __PFCloseHandle(ByRef $hHandle)
+	If Not IsPtr($hHandle) Or $hHandle=0 Then Return SetError(1,0,False)
+	Local $aRet=DllCall($_COMMON_KERNEL32DLL,"bool","CloseHandle","handle",$hHandle)
+	If @error Then Return SetError(2,@error,False)
+	If Not $aRet[0] Then Return SetError(3,@error,False)
+	; non-zero value for return means success
+	$hHandle=0	; invalidate handle
+	Return True
 EndFunc
 
 #cs ; notes
