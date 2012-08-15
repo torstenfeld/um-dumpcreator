@@ -366,15 +366,20 @@ Func _DcGui()
 				IniWrite($gFileIniValuesSave, "UserModeManual", "DumpLocation", GUICtrlRead($InputUserLocation))
 				If GUICtrlRead($ComboProcesses) = "" Then
 					If GUICtrlRead($RadioProcessExists) = $GUI_CHECKED Then
-						MsgBox(0, $gTitleMsgBox, "error") ;test
+						MsgBox(16,$gTitleMsgBox,"You did not specify a process to be dumped. Please choose a process in the dropdown menu.")
 						ContinueLoop
 					EndIf
 				EndIf
 				If Not FileExists(GUICtrlRead($InputUserLocation)) Then
-					MsgBox(0, $gTitleMsgBox, "error") ;test
-					ContinueLoop
+					If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
+					$iMsgBoxAnswer = MsgBox(52,$gTitleMsgBox,"The directory you specified was not found. Would you like to have it created for you?")
+					Select
+						Case $iMsgBoxAnswer = 6 ;Yes
+							DirCreate(GUICtrlRead($InputUserLocation))
+						Case $iMsgBoxAnswer = 7 ;No
+							ContinueLoop
+					EndSelect
 				EndIf
-
 
 				If GUICtrlRead($RadioUserCrash) = $GUI_CHECKED Then
 					$lAdPlusParameters = " -Crash"
@@ -401,7 +406,6 @@ Func _DcGui()
 
 				If GUICtrlRead($RadioProcessWaiting) = $GUI_CHECKED Then
 					Local $lProcessId = ProcessWait($sInputBoxAnswer)
-;~ 					MsgBox(0, "test", GUICtrlRead($sInputBoxAnswer)) ;test
 					Local $lhProcess = _ProcessOpen($lProcessId, 0x00001000)
 				Else
 					Local $lhProcess = _ProcessOpen(StringRegExpReplace(GUICtrlRead($ComboProcesses), ".*\((\d*)\).*", "$1"), 0x00001000)
