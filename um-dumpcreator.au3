@@ -187,6 +187,8 @@ EndFunc
 
 Func _DcGui()
 
+	_WriteDebug("INFO;_DcGui;_DcGui started")
+
 	Local $lChButtonActive = False
 
 	#Region ### START Koda GUI section ### Form=
@@ -265,13 +267,14 @@ Func _DcGui()
 	If Not FileExists($gFileIniValuesSave) Then GUICtrlSetState($ButtonReset, $GUI_DISABLE)
 	_SetValuesToUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 
-	If GUICtrlRead($CheckboxActivate) <> $GUI_CHECKED Then _ChangeAccessUserModeDumpControl(False, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
+	If GUICtrlRead($CheckboxActivate) <> $GUI_CHECKED Then 	_ChangeAccessUserModeDumpControl(False, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 
 	If $gPreVista Then
 		_ChangeAccessUserModeDumpControl(False, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 		GUICtrlSetState($CheckboxActivate, $GUI_DISABLE)
 		GUICtrlSetState($ButtonAvira, $GUI_DISABLE)
 		GUICtrlSetState($ButtonMicrosoft, $GUI_DISABLE)
+		_WriteDebug("WARN;_DcGui;Automatic user dump gui items disabled as prevista")
 	EndIf
 
 	If Not $gInstalledDebuggingTools Then
@@ -284,114 +287,155 @@ Func _DcGui()
 		GUICtrlSetState($InputUserLocation, $GUI_DISABLE)
 		GUICtrlSetState($ButtonUserBrowse, $GUI_DISABLE)
 		GUICtrlSetState($ButtonUserCreateDump, $GUI_DISABLE)
+		_WriteDebug("WARN;_DcGui;Manual user dump gui items disabled as Debugging Tools not installed")
 	Else
 		_GuiComboProcessFill()
+		_WriteDebug("INFO;_DcGui;$ComboProcesses filled")
 	EndIf
 
 	GUICtrlSetData($InputUserLocation, IniRead($gFileIniValuesSave, "UserModeManual", "DumpLocation", ""))
+	_WriteDebug("INFO;_DcGui;$InputUserLocation filled")
 
 	While 1
 		$nMsg = GUIGetMsg()
 		Switch $nMsg
 			Case $GUI_EVENT_CLOSE, $ButtonCancel
+				_WriteDebug("INFO;_DcGui;$GUI_EVENT_CLOSE, $ButtonCancel - exit")
 				Exit
 			Case $ButtonCrosshair
+				_WriteDebug("INFO;_DcGui;$ButtonCrosshair clicked")
 				If $lChButtonActive Then
 					AdlibUnRegister("_Mouse_Control_GetInfoAdlib")
 					ToolTip("")
+					_WriteDebug("INFO;_DcGui;$ButtonCrosshair - _Mouse_Control_GetInfoAdlib unregistered - ToolTip deleted")
 					$lChButtonActive = False
 				Else
 					_ProcessGetList()
 					_GuiComboProcessFill()
 					AdlibRegister("_Mouse_Control_GetInfoAdlib", 10)
+					_WriteDebug("INFO;_DcGui;$ButtonCrosshair - _Mouse_Control_GetInfoAdlib registered - ToolTip activated")
 					$lChButtonActive = True
 				EndIf
 			Case $ButtonRefresh
+				_WriteDebug("INFO;_DcGui;$ButtonRefresh clicked")
 				_ProcessGetList()
 				_GuiComboProcessFill()
 			Case $CheckboxActivate
+				_WriteDebug("INFO;_DcGui;$CheckboxActivate clicked")
 				If GUICtrlRead($CheckboxActivate) = $GUI_CHECKED Then
 					_ChangeAccessUserModeDumpControl(True, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
+					_WriteDebug("INFO;_DcGui;$CheckboxActivate checked - activated corresponding gui items")
 				Else
 					_ChangeAccessUserModeDumpControl(False, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
+					_WriteDebug("INFO;_DcGui;$CheckboxActivate unchecked - deactivated corresponding gui items")
 				EndIf
 			Case $ButtonSave
+				_WriteDebug("INFO;_DcGui;$ButtonSave clicked")
 				If Not _CheckBackupIniFileValues() Then _SaveValuesToIniFile() ; returns 1 if backup has already been made
 				GUICtrlSetState($ButtonReset, $GUI_ENABLE)
+				_WriteDebug("INFO;_DcGui;reading user dump items values")
 				_GetValuesFromUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 				If _CompareUserDumpValues() Then
 					MsgBox(262208,$gTitleMsgBox,"No value has changed.",15)
+					_WriteDebug("INFO;_DcGui;values have not changed - continuing loop")
 					ContinueLoop
 				EndIf
 				_RegistryWriteValues()
+				_WriteDebug("INFO;_DcGui;values have been written to registry")
 				_RegistryGetValues()
 				_SetValuesToUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
+				_WriteDebug("INFO;_DcGui;values have been rewritten to gui")
 				MsgBox(64,$gTitleMsgBox,"The new configuration has been written to registry.",15)
 			Case $ButtonUserABrowse
+				_WriteDebug("INFO;_DcGui;$ButtonUserABrowse clicked")
 				$lFolderDump = GUICtrlRead($InputDumpLocate)
+				_WriteDebug("INFO;_DcGui;$lFolderDump: " & $lFolderDump)
 				If StringInStr($lFolderDump, "%") Then
 					$lTempStringBetweenResult = StringRegExpReplace($lFolderDump, ".*\%(.*)\%.*", "$1")
 					$lFolderDump = StringReplace($lFolderDump, "%" & $lTempStringBetweenResult & "%", EnvGet($lTempStringBetweenResult))
+					_WriteDebug("INFO;_DcGui;system variable used: $lFolderDump: " & $lFolderDump)
 				EndIf
 				If Not FileExists($lFolderDump) Then $lFolderDump = @ScriptDir
 				$lFolderDump = FileSelectFolder("Please choose a directoy to store the dumps", "", 7, $lFolderDump, $FormDcGui)
 				If @error Then ContinueLoop
+				_WriteDebug("INFO;_DcGui;$lFolderDump: " & $lFolderDump)
 				GUICtrlSetData($InputDumpLocate, $lFolderDump)
 			Case $ButtonAvira
+				_WriteDebug("INFO;_DcGui;$ButtonAvira clicked")
 				GUICtrlSetState($CheckboxActivate, $GUI_CHECKED)
 				GUICtrlSetData($InputDumpCount, 10)
 				If GUICtrlRead($InputDumpLocate) = "" Then GUICtrlSetData($InputDumpLocate, "%LOCALAPPDATA%\CrashDumps")
 				GUICtrlSetState($RadioFullDump, $GUI_CHECKED)
 				_ChangeAccessUserModeDumpControl(True, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
+				_WriteDebug("INFO;_DcGui;set extended settings for user mode automatic")
 			Case $ButtonMicrosoft
+				_WriteDebug("INFO;_DcGui;$ButtonMicrosoft clicked")
 				GUICtrlSetState($CheckboxActivate, $GUI_CHECKED)
 				GUICtrlSetData($InputDumpCount, 10)
 				GUICtrlSetData($InputDumpLocate, "%LOCALAPPDATA%\CrashDumps")
 				GUICtrlSetState($RadioMiniDump, $GUI_CHECKED)
 				_ChangeAccessUserModeDumpControl(True, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
+				_WriteDebug("INFO;_DcGui;set microsoft recommended settings for user mode automatic")
 			Case $ButtonReset
+				_WriteDebug("INFO;_DcGui;$ButtonReset clicked")
 				_IniFileGetValues()
 				_SetValuesToUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 				_RegistryGetValues()
 			Case $ButtonOpen
+				_WriteDebug("INFO;_DcGui;$ButtonOpen clicked")
 				$lFolderDump = GUICtrlRead($InputDumpLocate)
 				If StringInStr($lFolderDump, "%") Then
+					_WriteDebug("INFO;_DcGui;system variable used $lFolderDump: " & $lFolderDump)
 					$lTempStringBetweenResult = StringRegExpReplace($lFolderDump, ".*\%(.*)\%.*", "$1")
 					$lFolderDump = StringReplace($lFolderDump, "%" & $lTempStringBetweenResult & "%", EnvGet($lTempStringBetweenResult))
 				EndIf
 				If FileExists($lFolderDump) Then
+					_WriteDebug("INFO;_DcGui;$lFolderDump exists - opening: " & $lFolderDump)
 					ShellExecute($lFolderDump)
 				Else
+					_WriteDebug("INFO;_DcGui;$lFolderDump does not exist")
 					If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
 					$iMsgBoxAnswer = MsgBox(52,$gTitleMsgBox,"The folder " & $lFolderDump & " does not exist. Would you like to create it now?")
 					Select
 						Case $iMsgBoxAnswer = 6 ;Yes
+							_WriteDebug("INFO;_DcGui;user chose yes, folder is going to be created: " & $lFolderDump)
 							DirCreate($lFolderDump)
 							ShellExecute($lFolderDump)
-;~ 						Case $iMsgBoxAnswer = 7 ;No
+						Case $iMsgBoxAnswer = 7 ;No
+							_WriteDebug("INFO;_DcGui;user chose no, folder not going to be created")
 					EndSelect
 				EndIf
 			Case $ButtonUserBrowse
+				_WriteDebug("INFO;_DcGui;$ButtonUserBrowse clicked")
 				$gDirUserManualDump = GUICtrlRead($InputUserLocation)
 				If Not FileExists($gDirUserManualDump) Then $gDirUserManualDump = @ScriptDir
 				$gDirUserManualDump = FileSelectFolder("Please choose a directoy to store the dumps", "", 7, $gDirUserManualDump, $FormDcGui)
-				If @error Then ContinueLoop
+				If @error Then
+					_WriteDebug("INFO;_DcGui;$gDirUserManualDump not chosen - continuing loop")
+					ContinueLoop
+				EndIf
+				_WriteDebug("INFO;_DcGui;$gDirUserManualDump: " & $gDirUserManualDump)
 				GUICtrlSetData($InputUserLocation, $gDirUserManualDump)
 			Case $ButtonUserCreateDump
+				_WriteDebug("INFO;_DcGui;$ButtonUserCreateDump clicked")
 				IniWrite($gFileIniValuesSave, "UserModeManual", "DumpLocation", GUICtrlRead($InputUserLocation))
 				If GUICtrlRead($ComboProcesses) = "" Then
 					If GUICtrlRead($RadioProcessExists) = $GUI_CHECKED Then
+						_WriteDebug("WARN;_DcGui;no process was chosen")
 						MsgBox(16,$gTitleMsgBox,"You did not specify a process to be dumped. Please choose a process in the dropdown menu.")
 						ContinueLoop
 					EndIf
 				EndIf
 				If Not FileExists(GUICtrlRead($InputUserLocation)) Then
+					_WriteDebug("WARN;_DcGui;$InputUserLocation not set")
 					If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
 					$iMsgBoxAnswer = MsgBox(52,$gTitleMsgBox,"The directory you specified was not found. Would you like to have it created for you?")
 					Select
 						Case $iMsgBoxAnswer = 6 ;Yes
 							DirCreate(GUICtrlRead($InputUserLocation))
+							_WriteDebug("INFO;_DcGui;dir was created: " & $InputUserLocation)
 						Case $iMsgBoxAnswer = 7 ;No
+							_WriteDebug("WARN;_DcGui;dir not chosen - continuing loop")
 							ContinueLoop
 					EndSelect
 				EndIf
@@ -411,27 +455,32 @@ Func _DcGui()
 						Case 0 ;OK - The string returned is valid
 							$lAdPlusParameters &= " -pmn " & $sInputBoxAnswer
 						Case Else ;any error
+							_WriteDebug("INFO;_DcGui;InputBox error: "  & @error)
 							MsgBox(0, $gTitleMsgBox, "InputBox error: " & @error) ;test
 							ContinueLoop
 					EndSwitch
 				EndIf
-				 $lAdPlusParameters &= ' -o "' & GUICtrlRead($InputUserLocation) & _
+				$lAdPlusParameters &= ' -o "' & GUICtrlRead($InputUserLocation) & _
 					'" -FullOnFirst -lcqd'
 ;~ 					'" -FullOnFirst -CTCFB'
+				_WriteDebug("INFO;_DcGui;$lAdPlusParameters: " & $lAdPlusParameters)
 
 				If GUICtrlRead($RadioProcessWaiting) = $GUI_CHECKED Then
+					_WriteDebug("INFO;_DcGui;$RadioProcessWaiting set")
 					Local $lProcessId = ProcessWait($sInputBoxAnswer)
 					Local $lhProcess = _ProcessOpen($lProcessId, 0x00001000)
 				Else
+					_WriteDebug("INFO;_DcGui;$RadioProcessExists set")
 					Local $lhProcess = _ProcessOpen(StringRegExpReplace(GUICtrlRead($ComboProcesses), ".*\((\d*)\).*", "$1"), 0x00001000)
 				EndIf
 				Local $lProcessArch = _ProcessIsWow64($lhProcess) ; 1 if x86 proc on x64 os
 				_ProcessCloseHandle($lhProcess)
 				If $lProcessArch Then
-					Local $lFileAdPlus = $gDirDebuggingToolsx86 & "\adplus.exe" ;error as not x86 / x64 chosen
+					Local $lFileAdPlus = $gDirDebuggingToolsx86 & "\adplus.exe"
 				Else
-					Local $lFileAdPlus = $gDirDebuggingToolsx64 & "\adplus.exe" ;error as not x86 / x64 chosen
+					Local $lFileAdPlus = $gDirDebuggingToolsx64 & "\adplus.exe"
 				EndIf
+				_WriteDebug("INFO;_DcGui;$lProcessArch: " & $lProcessArch & " - " & $lFileAdPlus)
 
 ;~ 				Run(@ComSpec & ' /c ' & FileGetShortName($lFileAdPlus) & $lAdPlusParameters);, @SW_HIDE)
 				Local $lOutputRun = Run(FileGetShortName($lFileAdPlus) & $lAdPlusParameters);, @SW_MAXIMIZE, $STDERR_CHILD + $STDOUT_CHILD)
@@ -439,11 +488,14 @@ Func _DcGui()
 				If GUICtrlRead($RadioProcessWaiting) = $GUI_CHECKED Then MsgBox(64,$gTitleMsgBox,"After the crash occured, please close the crashed window and close the DOS box which just opened with <ENTER>.",10)
 
 				ProcessWaitClose("adplus.exe")
+				_WriteDebug("INFO;_DcGui;adplus.exe has been closed")
 				MsgBox(0, $gTitleMsgBox, "Dump has been created") ;test
 			Case $RadioProcessWaiting
 				GUICtrlSetState($ComboProcesses, $GUI_DISABLE)
+				_WriteDebug("INFO;_DcGui;$RadioProcessWaiting checked")
 			Case $RadioProcessExists
 				GUICtrlSetState($ComboProcesses, $GUI_ENABLE)
+				_WriteDebug("INFO;_DcGui;$RadioProcessExists checked")
 
 		EndSwitch
 	WEnd
