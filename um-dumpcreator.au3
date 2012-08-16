@@ -680,14 +680,18 @@ EndFunc   ;==>_ControlGetClassnameNN
 
 Func _RegistryGetValues()
 
+	_WriteDebug("INFO;_RegistryGetValues;_RegistryGetValues started")
+
 	$lRegBase = $gRegBase & "\LocalDumps"
 	$gaRegUserDumpValues[0] = False
 
 	$gaRegUserDumpValues[1] = RegRead($lRegBase, "DumpFolder")
 	$gaRegUserDumpValues[2] = RegRead($lRegBase, "DumpCount")
 	$gaRegUserDumpValues[3] = RegRead($lRegBase, "DumpType")
+	_WriteDebug("INFO;_RegistryGetValues;Registry values read")
 
 	If $gaRegUserDumpValues[1] <> "" Then $gaRegUserDumpValues[0] = True
+	_WriteDebug("INFO;_RegistryGetValues;$gaRegUserDumpValues[0]: " & $gaRegUserDumpValues[0])
 
 EndFunc
 
