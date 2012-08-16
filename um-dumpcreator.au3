@@ -550,13 +550,17 @@ EndFunc
 
 Func _ProcessGetExe($lHandle) ; returns process executable
 
+	_WriteDebug("INFO;_ProcessGetExe;_ProcessGetExe started")
 	Local $lPid = WinGetProcess($lHandle)
+	_WriteDebug("INFO;_ProcessGetExe;$lPid: " & $lPid)
 	Local $lArrayResult = _ArraySearch($gaProcesses, $lPid, 0, 0, 0, 0, 1, 1)
 	If @error Then
+		_WriteDebug("WARN;_ProcessGetExe;$lPid not found in array - refreshing and searching again")
 		_ProcessGetList()
 		_GuiComboProcessFill()
 		$lArrayResult = _ArraySearch($gaProcesses, $lPid, 0, 0, 0, 0, 1, 1)
 	EndIf
+	_WriteDebug("INFO;_ProcessGetExe;returning " & $gaProcesses[$lArrayResult][0])
 	Return $gaProcesses[$lArrayResult][0]
 
 EndFunc
