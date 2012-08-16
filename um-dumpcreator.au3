@@ -126,7 +126,12 @@ EndFunc
 
 Func _ArchCheck()
 
-	If Not @Compiled Then Return 0
+	_WriteDebug("INFO;_ArchCheck;_ArchCheck started")
+
+	If Not @Compiled Then
+		_WriteDebug("WARN;_ArchCheck;Not compiled - returning 0 and exiting _ArchCheck")
+		Return 0
+	EndIf
 
 	Local $lMsgBoxText = ""
 
@@ -137,18 +142,23 @@ Func _ArchCheck()
 			If @AutoItX64 Then $lMsgBoxText = "The architecture of your OS (" & @OSArch & ") does not match with the architecture of this tool (X64)." & @CRLF
 	EndSwitch
 
-	If $lMsgBoxText = "" Then Return 1
+	If $lMsgBoxText = "" Then
+		_WriteDebug("INFO;_ArchCheck;OsArch check ok - returning 1")
+		Return 1
+	EndIf
+	_WriteDebug("WARN;_ArchCheck;OsArch check nok - $lMsgBoxText; " & StringStripCR($lMsgBoxText))
 
 	Local $iMsgBoxAnswer = MsgBox(52,$gTitleMsgBox, $lMsgBoxText & "Please download the correct version from " & @CRLF & $gUrlDownloadTool & @CRLF & @CRLF & _
-	"Would you like to open the site now?", 15)
+		"Would you like to open the site now?", 15)
 	Select
 		Case $iMsgBoxAnswer = 6 ;Yes
+			_WriteDebug("INFO;_ArchCheck;user chose to open download page - exit 0")
 			ShellExecuteWait($gUrlDownloadTool)
 			Sleep(4000)
 			Exit 0
 		Case $iMsgBoxAnswer = 7 ;No
+			_WriteDebug("ERR ;_ArchCheck;user did NOT choose to open download page - exit 1")
 			Exit 1
-
 	EndSelect
 
 EndFunc
