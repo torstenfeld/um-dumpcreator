@@ -165,21 +165,22 @@ EndFunc
 
 Func _OsCheckPreVista()
 
+	_WriteDebug("INFO;_OsCheckPreVista;_OsCheckPreVista started")
+
 	Switch @OSVersion
 		Case "WIN_XP", "WIN_XPe", "WIN_2000"
-;~ 			MsgBox(16,"Dump configurator","Unfortunately, Microsoft Windows below Vista is currently not supported. " & @CRLF & _
-;~ 				"Support for those Operating Systems (especially Windows XP) will be added as soon as possible. " & @CRLF & @CRLF & _
-;~ 				"Visit https://github.com/torstenfeld/um-dumpcreator for latest news.")
-;~ 			Exit 2
 			$gPreVista = True
+			_WriteDebug("INFO;_OsCheckPreVista;OsVersion: " & @OSVersion & " - $gPreVista: " & $gPreVista)
 		Case "WIN_2008R2", "WIN_7", "WIN_8", "WIN_2008", "WIN_VISTA", "WIN_2003"
 			$gPreVista = False
+			_WriteDebug("INFO;_OsCheckPreVista;OsVersion: " & @OSVersion & " - $gPreVista: " & $gPreVista)
 		Case Else
+			_WriteDebug("ERR ;_OsCheckPreVista;OsVersion: " & @OSVersion & " - Os not supported: " & @OSBuild & " / " & @OSServicePack & " - exit 3")
 			MsgBox(16,$gTitleMsgBox,"Unfortunately, the Operating System you are using currently not supported. " & @CRLF & _
 				"Please write an email to torsten@torsten-feld.de with the following information:" & @CRLF & _
 				@OSVersion & " / " & @OSBuild & " / " & @OSServicePack & @CRLF & @CRLF & _
 				"Visit https://github.com/torstenfeld/um-dumpcreator for latest news.")
-
+			Exit 3
 	EndSwitch
 
 EndFunc
