@@ -697,18 +697,28 @@ EndFunc
 
 Func _RegistryWriteValues()
 
+	_WriteDebug("INFO;_RegistryWriteValues;_RegistryWriteValues started")
 	$lRegBase = $gRegBase & "\LocalDumps"
 ;~ 	_ArrayDisplay($gaRegUserDumpValuesNew, "$gaRegUserDumpValuesNew")
 
 	If $gaRegUserDumpValuesNew[0] = True Then
 		RegWrite($lRegBase, "DumpFolder", "REG_EXPAND_SZ", $gaRegUserDumpValuesNew[1])
-		If @error Then MsgBox(0, $gTitleMsgBox, "RegWrite error: " & @error) ;test
+		If @error Then
+			_WriteDebug("ERR ;_RegistryWriteValues;RegWrite failed: " & @error)
+			MsgBox(0, $gTitleMsgBox, "RegWrite error: " & @error) ;test
+		EndIf
 		RegWrite($lRegBase, "DumpCount", "REG_DWORD", $gaRegUserDumpValuesNew[2])
 		RegWrite($lRegBase, "DumpType", "REG_DWORD", $gaRegUserDumpValuesNew[3])
+		_WriteDebug("INFO;_RegistryWriteValues;writing to registry successfull")
 	Else
 		RegDelete($lRegBase, "DumpFolder")
+		If @error Then
+			_WriteDebug("INFO;_RegistryWriteValues;RegDelete failed: " & @error)
+			MsgBox(0, $gTitleMsgBox, "RegDelete error: " & @error) ;test
+		EndIf
 		RegDelete($lRegBase, "DumpCount")
 		RegDelete($lRegBase, "DumpType")
+		_WriteDebug("INFO;_RegistryWriteValues;RegDelete successfull")
 	EndIf
 
 EndFunc
