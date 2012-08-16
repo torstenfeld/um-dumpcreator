@@ -504,16 +504,20 @@ EndFunc
 
 Func _ChangeAccessUserModeDumpControl($lActivate, ByRef $InputDumpCount, ByRef $InputDumpLocate, ByRef $RadioCustomDump, ByRef $RadioMiniDump, ByRef $RadioFullDump)
 
+	_WriteDebug("INFO;_ChangeAccessUserModeDumpControl;_ChangeAccessUserModeDumpControl started")
+
 	If $lActivate Then
 		GUICtrlSetState($InputDumpCount, $GUI_ENABLE)
 		GUICtrlSetState($InputDumpLocate, $GUI_ENABLE)
 		GUICtrlSetState($RadioMiniDump, $GUI_ENABLE)
 		GUICtrlSetState($RadioFullDump, $GUI_ENABLE)
+		_WriteDebug("INFO;_ChangeAccessUserModeDumpControl;Items activated")
 	Else
 		GUICtrlSetState($InputDumpCount, $GUI_DISABLE)
 		GUICtrlSetState($InputDumpLocate, $GUI_DISABLE)
 		GUICtrlSetState($RadioMiniDump, $GUI_DISABLE)
 		GUICtrlSetState($RadioFullDump, $GUI_DISABLE)
+		_WriteDebug("INFO;_ChangeAccessUserModeDumpControl;Items deactivated")
 	EndIf
 EndFunc
 
