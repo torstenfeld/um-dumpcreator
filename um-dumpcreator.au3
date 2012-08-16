@@ -725,12 +725,17 @@ EndFunc
 
 Func _IniFileGetValues()
 
-	$gaRegUserDumpValues[0] = IniRead($gFileIniValuesSave, "values", "active", "")
-	If $gaRegUserDumpValues[0] = "" Then Return SetError(1, 0, 0)
+	_WriteDebug("INFO;_IniFileGetValues;_IniFileGetValues started")
 
+	$gaRegUserDumpValues[0] = IniRead($gFileIniValuesSave, "values", "active", "")
+	If $gaRegUserDumpValues[0] = "" Then
+		_WriteDebug("WARN;_IniFileGetValues;could not read value of ini file")
+		Return SetError(1, 0, 0)
+	EndIf
 	$gaRegUserDumpValues[1] = IniRead($gFileIniValuesSave, "values", "folder", "")
 	$gaRegUserDumpValues[2] = IniRead($gFileIniValuesSave, "values", "count", "")
 	$gaRegUserDumpValues[3] = IniRead($gFileIniValuesSave, "values", "type", "")
+	_WriteDebug("INFO;_IniFileGetValues;values read successfully of ini file")
 
 EndFunc
 
