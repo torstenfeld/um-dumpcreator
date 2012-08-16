@@ -741,38 +741,50 @@ EndFunc
 
 Func _DebugToolsMain()
 
+	_WriteDebug("INFO;_DebugToolsMain;_DebugToolsMain started")
+
 	If @OSArch = "X64" Then
 		; filename, download size, installed, x64
 		Local $laDbtInfoArray[2][4] = [["dbg_x86.msi", "", 0, 0], ["dbg_amd64.msi", "", 0, 1]]
 	else
 		Local $laDbtInfoArray[1][4] = [["dbg_x86.msi", "", 0, 0]]
 	EndIf
-
+	_WriteDebug("INFO;_DebugToolsMain;@OSArch: " & @OSArch & " / ubound($laDbtInfoArray): " & UBound($laDbtInfoArray))
 
 	If _DebugToolsCheckInstalled($laDbtInfoArray) Then
 ;~ 		MsgBox(64, "Dump Configurator", "Windows Debugging Tools are already installed. Skipping installation.") ;test
 		$gInstalledDebuggingTools = True
+		_WriteDebug("INFO;_DebugToolsMain;$gInstalledDebuggingTools: " & $gInstalledDebuggingTools)
 		_DebugToolsGetInstallFolder($laDbtInfoArray)
+		_WriteDebug("INFO;_DebugToolsMain;wdt folders read - returning 1")
 		Return 1 ;test
 	Else
+		_WriteDebug("WARN;_DebugToolsMain;wdt tools not installed - asking for automatic installation")
 		If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
 		$iMsgBoxAnswer = MsgBox(36,$gTitleMsgBox,"Windows Debugging Tools are not installed, which are needed for user dump creation. " & @CRLF & "Would you like to install Windows Debugging Tools now?")
 		Select
-;~ 			Case $iMsgBoxAnswer = 6 ;Yes
+			Case $iMsgBoxAnswer = 6 ;Yes
+				_WriteDebug("INFO;_DebugToolsMain;user chose to install wdt")
 			Case $iMsgBoxAnswer = 7 ;No
+				_WriteDebug("WARN;_DebugToolsMain;user chose NOT to install wdt - returning error 1")
 				$gInstalledDebuggingTools = False
 				Return SetError(1, 0, 0)
 		EndSelect
 	EndIf
-	If Not _DebugToolsDownload($laDbtInfoArray) Then Return SetError(3, 0, 0)
+	If Not _DebugToolsDownload($laDbtInfoArray) Then
+		_WriteDebug("WARN;_DebugToolsMain;wdt download failed - returning error 3")
+		Return SetError(3, 0, 0)
+	EndIf
+	_WriteDebug("INFO;_DebugToolsMain;wdt download successfull")
 
-
-;~ 	Exit ; test
 	If _DebugToolsInstall($laDbtInfoArray) Then
 		$gInstalledDebuggingTools = True
+		_WriteDebug("INFO;_DebugToolsMain;$gInstalledDebuggingTools: " & $gInstalledDebuggingTools)
 		_DebugToolsGetInstallFolder($laDbtInfoArray)
+		_WriteDebug("INFO;_DebugToolsMain;wdt folders read - returning 1")
 		Return 1
 	Else
+		_WriteDebug("WARN;_DebugToolsMain;wdt tools not installed - returning error 2")
 		$gInstalledDebuggingTools = False
 		Return SetError(2, 0, 0)
 	EndIf
