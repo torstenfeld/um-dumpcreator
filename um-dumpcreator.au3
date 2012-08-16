@@ -523,8 +523,14 @@ EndFunc
 
 Func _ProcessGetList()
 
+	_WriteDebug("INFO;_ProcessGetList;_ProcessGetList started")
+
 	$gaProcesses = ProcessList()
-	If $gaProcesses[0][0] = 0 Then Return SetError(1, 0, 1)
+	If $gaProcesses[0][0] = 0 Then
+		_WriteDebug("ERR ;_ProcessGetList;error in ProcessList()")
+		Return SetError(1, 0, 1)
+	EndIf
+	_WriteDebug("INFO;_ProcessGetList;sorting $gaProcesses")
 	_ArraySort($gaProcesses, 0, 1)
 
 EndFunc
