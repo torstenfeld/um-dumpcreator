@@ -536,12 +536,15 @@ Func _ProcessGetList()
 EndFunc
 
 Func _GuiComboProcessFill()
+	_WriteDebug("INFO;_GuiComboProcessFill;_GuiComboProcessFill started")
 	_GUICtrlComboBox_ResetContent($ComboProcesses)
+	_WriteDebug("INFO;_GuiComboProcessFill;$ComboProcesses has been reset")
 	_GUICtrlComboBox_BeginUpdate($ComboProcesses)
 	For $i = 1 To $gaProcesses[0][0]
 		_GUICtrlComboBox_AddString($ComboProcesses, $gaProcesses[$i][0] & " (" & $gaProcesses[$i][1] & ")")
 	Next
 	_GUICtrlComboBox_EndUpdate($ComboProcesses)
+	_WriteDebug("INFO;_GuiComboProcessFill;$ComboProcesses has been filled")
 
 EndFunc
 
