@@ -95,13 +95,16 @@ AutoItSetOption("TrayIconDebug", 1)
 
 Func _DcMain()
 
+	_WriteDebug("INFO;_DcMain;_DcMain started")
 	_ArchCheck()
 
 	If @Compiled Then
 		$gVersion = FileGetVersion(@ScriptFullPath, "FileVersion")
 		If @error Then $gVersion = "0.0.0.0"
+		_WriteDebug("INFO;_DcMain;compiled - Version " & $gVersion)
 	Else
 		$gVersion = "9.99.99.99 - not compiled"
+		_WriteDebug("INFO;_DcMain;Not compiled - Version " & $gVersion)
 	EndIf
 
 	_CheckForUpdate()
