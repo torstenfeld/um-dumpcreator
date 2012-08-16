@@ -54,6 +54,7 @@ AutoItSetOption("TrayIconDebug", 1)
 	Global $gDirProgramFilesx86 = EnvGet("ProgramFiles(x86)")
 	Global $gDirProgramFilesx64 = EnvGet("ProgramFiles")
 	Global $gFileIniValuesSave = $gDirTemp & "\savedvalues.ini"
+	Global $gDbgFile = $gDirTemp & "\dc-debug.log"
 
 	Global $gUrlDownloadTool = "https://github.com/torstenfeld/um-dumpcreator/downloads"
 
@@ -1012,6 +1013,38 @@ Func __PFCloseHandle(ByRef $hHandle)
 	$hHandle=0	; invalidate handle
 	Return True
 EndFunc
+
+Func _WriteDebug($lParam) ; $lType, $lFunc, $lString) ; creates debuglog for analyzing problems
+	Local $lArray[4]
+	Local $lResult
+
+;~ 	$lArray[0] bleibt leer
+;~ 	$lArray[1] = "Type: "
+;~ 	$lArray[2] = "Func: "
+;~ 	$lArray[3] = "Desc: "
+
+	Local $lArrayTemp = StringSplit($lParam, ";")
+	If @error Then
+		Dim $lArrayTemp[4]
+;~ 		$lArrayTemp[0] bleibt leer
+		$lArrayTemp[1] = "ERR "
+		$lArrayTemp[2] = "_WriteDebug"
+		$lArrayTemp[3] = "StringSplit failed"
+	EndIf
+
+;~ 	if (Not $gAdvDebug) and ($lArrayTemp[1] = "INFO") Then
+;~ 		SetError(1)
+;~ 		Return -1
+;~ 	EndIf
+
+	For $i = 1 To $lArrayTemp[0]
+		If $i > 1 Then $lResult = $lResult & @CRLF
+		$lResult = $lResult & $lArray[$i] & $lArrayTemp[$i]
+	Next
+
+	FileWriteLine($gDbgFile, @MDAY & @MON & @YEAR & " " & @HOUR & ":" & @MIN & ":" & @SEC & "." & @MSEC & " - " & $lArrayTemp[1] & " - " & $lArrayTemp[2] & " - " & $lArrayTemp[3])
+;~ 	FileWriteLine($gDbgFile, @HOUR & ":" & @MIN & ":" & @SEC & "." & @MSEC & " - " & $lType & " - " & $lFunc & " - " & $lString)
+EndFunc   ;==>_WriteDebug
 
 #cs ; notes
 
