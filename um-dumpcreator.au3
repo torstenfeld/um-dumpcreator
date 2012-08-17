@@ -1,14 +1,14 @@
 #RequireAdmin
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_Icon=favicon.ico
-#AutoIt3Wrapper_Outfile=dumpconfigurator-1.2.0.16-x86.exe
-#AutoIt3Wrapper_Outfile_x64=dumpconfigurator-1.2.0.16-x64.exe
+#AutoIt3Wrapper_Outfile=dumpconfigurator-1.2.0.18-x86.exe
+#AutoIt3Wrapper_Outfile_x64=dumpconfigurator-1.2.0.18-x64.exe
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Compile_Both=y
 #AutoIt3Wrapper_UseX64=y
 #AutoIt3Wrapper_Res_Comment=Sets registry settings for automatic creation of user dumps
 #AutoIt3Wrapper_Res_Description=Sets registry settings for automatic creation of user dumps
-#AutoIt3Wrapper_Res_Fileversion=1.2.0.16
+#AutoIt3Wrapper_Res_Fileversion=1.2.0.18
 #AutoIt3Wrapper_Res_LegalCopyright=Copyright © 2011 Torsten Feld - All rights reserved.
 #AutoIt3Wrapper_Res_requestedExecutionLevel=requireAdministrator
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
@@ -150,7 +150,7 @@ Func _ArchCheck()
 		_WriteDebug("INFO;_ArchCheck;OsArch check ok - returning 1")
 		Return 1
 	EndIf
-	_WriteDebug("WARN;_ArchCheck;OsArch check nok - $lMsgBoxText; " & StringStripCR($lMsgBoxText))
+	_WriteDebug("WARN;_ArchCheck;OsArch check nok - $lMsgBoxText: " & StringStripCR($lMsgBoxText))
 
 	Local $iMsgBoxAnswer = MsgBox(52,$gTitleMsgBox, $lMsgBoxText & "Please download the correct version from " & @CRLF & $gUrlDownloadTool & @CRLF & @CRLF & _
 		"Would you like to open the site now?", 15)
