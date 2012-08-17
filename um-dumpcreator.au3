@@ -1108,11 +1108,18 @@ EndFunc
 
 Func _CheckBackupIniFileValues() ; returns 1 if backup has already been made
 
-	If Not FileExists($gFileIniValuesSave) Then Return 0
+	_WriteDebug("INFO;_CheckBackupIniFileValues;_CheckBackupIniFileValues started")
+
+	If Not FileExists($gFileIniValuesSave) Then
+		_WriteDebug("WARN;_CheckBackupIniFileValues;file does not exist: " & $gFileIniValuesSave & " - returning 0")
+		Return 0
+	EndIf
 
 	If IniRead($gFileIniValuesSave, "values", "folder", "")  = "" Then Return 0
 	If IniRead($gFileIniValuesSave, "values", "count", "")  = "" Then Return 0
 	If IniRead($gFileIniValuesSave, "values", "type", "")  = "" Then Return 0
+
+	_WriteDebug("INFO;_CheckBackupIniFileValues;ini values read successfully - returning 1")
 
 	Return 1
 EndFunc
