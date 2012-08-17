@@ -394,7 +394,7 @@ Func _DcGui()
 					_WriteDebug("INFO;_DcGui;$lFolderDump exists - opening: " & $lFolderDump)
 					ShellExecute($lFolderDump)
 				Else
-					_WriteDebug("INFO;_DcGui;$lFolderDump does not exist")
+					_WriteDebug("WARN;_DcGui;$lFolderDump does not exist")
 					If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
 					$iMsgBoxAnswer = MsgBox(52,$gTitleMsgBox,"The folder " & $lFolderDump & " does not exist. Would you like to create it now?")
 					Select
@@ -403,7 +403,7 @@ Func _DcGui()
 							DirCreate($lFolderDump)
 							ShellExecute($lFolderDump)
 						Case $iMsgBoxAnswer = 7 ;No
-							_WriteDebug("INFO;_DcGui;user chose no, folder not going to be created")
+							_WriteDebug("WARN;_DcGui;user chose no, folder not going to be created")
 					EndSelect
 				EndIf
 			Case $ButtonUserBrowse
@@ -412,7 +412,7 @@ Func _DcGui()
 				If Not FileExists($gDirUserManualDump) Then $gDirUserManualDump = @ScriptDir
 				$gDirUserManualDump = FileSelectFolder("Please choose a directoy to store the dumps", "", 7, $gDirUserManualDump, $FormDcGui)
 				If @error Then
-					_WriteDebug("INFO;_DcGui;$gDirUserManualDump not chosen - continuing loop")
+					_WriteDebug("WARN;_DcGui;$gDirUserManualDump not chosen - continuing loop")
 					ContinueLoop
 				EndIf
 				_WriteDebug("INFO;_DcGui;$gDirUserManualDump: " & $gDirUserManualDump)
@@ -456,7 +456,7 @@ Func _DcGui()
 						Case 0 ;OK - The string returned is valid
 							$lAdPlusParameters &= " -pmn " & $sInputBoxAnswer
 						Case Else ;any error
-							_WriteDebug("INFO;_DcGui;InputBox error: "  & @error)
+							_WriteDebug("ERR ;_DcGui;InputBox error: "  & @error)
 							MsgBox(0, $gTitleMsgBox, "InputBox error: " & @error) ;test
 							ContinueLoop
 					EndSwitch
