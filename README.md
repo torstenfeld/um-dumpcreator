@@ -16,6 +16,11 @@ https://trello.com/board/dev-usermode-dump-creator/501f9039d4fe3721757fa651
 * none so far
 
 ## Changelog
+### 1.2.0.16
+* added logging to %temp%\dumpconfigurator\dc-debug.log
+* renamed variable for 'extended' button from $ButtonAvira to $ButtonExtended
+* changed ini key from WdtPath to WdtPath64 / WdtPath86 depending on os and process architecture
+
 ### 1.1.0.14
 * added support for x86 dump creation on x64 OS depending on process architecture
 
