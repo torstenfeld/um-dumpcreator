@@ -1126,8 +1126,12 @@ EndFunc
 
 Func _CheckForUpdate()
 
+	_WriteDebug("INFO;_CheckForUpdate;_CheckForUpdate started")
+
 	$lVersionOnline = _INetGetSource("https://raw.github.com/torstenfeld/um-dumpcreator/master/version.txt")
+	_WriteDebug("INFO;_CheckForUpdate;version online: " & $lVersionOnline & " - version used: " & $gVersion)
 	If _VersionCompare($gVersion, $lVersionOnline) < 0 Then
+		_WriteDebug("INFO;_CheckForUpdate;newer version available")
 		If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
 		$iMsgBoxAnswer = MsgBox(4,$gTitleMsgBox,"There is a new version available. Please download it from " & @CRLF & $gUrlDownloadTool & @CRLF & @CRLF & _
 			"Would you like to open the site now?", 15)
@@ -1135,9 +1139,10 @@ Func _CheckForUpdate()
 			Case $iMsgBoxAnswer = 6 ;Yes
 				ShellExecuteWait($gUrlDownloadTool)
 				Sleep(4000)
+				_WriteDebug("INFO;_CheckForUpdate;user chose to open website")
 				Exit 0
-;~ 			Case $iMsgBoxAnswer = 7 ;No
-
+			Case $iMsgBoxAnswer = 7 ;No
+				_WriteDebug("WARN;_CheckForUpdate;user chose NOT to open website")
 		EndSelect
 	EndIf
 
