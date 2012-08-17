@@ -893,6 +893,7 @@ Func _DebugToolsDownload(ByRef $laDbtInfoArray) ; returns 1 if files were succes
 
 		If FileExists($gDirTemp & "\" & $laDbtInfoArray[$i][0]) Then
 			Local $lFileSizeLocally = FileGetSize($gDirTemp & "\" & $laDbtInfoArray[$i][0])
+			_WriteDebug("INFO;_DebugToolsDownload;$lFileSizeLocally: " & $lFileSizeLocally)
 			If ($lFileSizeLocally / 1024) = $laDbtInfoArray[$i][1] Then
 				_WriteDebug("INFO;_DebugToolsDownload;download successfull: " & $laDbtInfoArray[$i][0])
 				$lDownloadSuccess += 1
