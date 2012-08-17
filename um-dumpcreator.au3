@@ -1059,10 +1059,15 @@ EndFunc
 
 Func _SetValuesToUserDumpItems(ByRef $CheckboxActivate, ByRef $InputDumpCount, ByRef $InputDumpLocate, ByRef $RadioCustomDump, ByRef $RadioMiniDump, ByRef $RadioFullDump)
 
+	_WriteDebug("INFO;_SetValuesToUserDumpItems;_SetValuesToUserDumpItems started")
+
+
 	If $gaRegUserDumpValues[0] Then
 		GUICtrlSetState($CheckboxActivate, $GUI_CHECKED)
+		_WriteDebug("INFO;_SetValuesToUserDumpItems;$CheckboxActivate activated")
 	Else
 		GUICtrlSetState($CheckboxActivate, $GUI_UNCHECKED)
+		_WriteDebug("INFO;_SetValuesToUserDumpItems;$CheckboxActivate not checked - returning error 1")
 		Return SetError(1, 0, 0)
 	EndIf
 
@@ -1077,9 +1082,10 @@ Func _SetValuesToUserDumpItems(ByRef $CheckboxActivate, ByRef $InputDumpCount, B
 			GUICtrlSetState($RadioFullDump, $GUI_CHECKED)
 		Case Else
 			MsgBox(262160,$gTitleMsgBox,"Error in _SetValuesToUserDumpItems()" & @CRLF & @CRLF & "Weird value in $gaRegUserDumpValues[3]",10)
+			_WriteDebug("ERR ;_SetValuesToUserDumpItems;Weird value in $gaRegUserDumpValues[3]: " & $gaRegUserDumpValues[3])
 			Exit(1)
-
 	EndSwitch
+	_WriteDebug("INFO;_SetValuesToUserDumpItems;gui items set successfully")
 
 EndFunc
 
