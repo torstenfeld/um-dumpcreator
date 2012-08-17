@@ -1,14 +1,14 @@
 #RequireAdmin
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_Icon=favicon.ico
-#AutoIt3Wrapper_Outfile=dumpconfigurator-1.1.0.14-x86.exe
-#AutoIt3Wrapper_Outfile_x64=dumpconfigurator-1.1.0.14-x64.exe
+#AutoIt3Wrapper_Outfile=dumpconfigurator-1.1.0.15-x86.exe
+#AutoIt3Wrapper_Outfile_x64=dumpconfigurator-1.1.0.15-x64.exe
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Compile_Both=y
+#AutoIt3Wrapper_UseX64=y
 #AutoIt3Wrapper_Res_Comment=Sets registry settings for automatic creation of user dumps
 #AutoIt3Wrapper_Res_Description=Sets registry settings for automatic creation of user dumps
-#AutoIt3Wrapper_Res_Fileversion=1.1.0.14
-#AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
+#AutoIt3Wrapper_Res_Fileversion=1.1.0.15
 #AutoIt3Wrapper_Res_LegalCopyright=Copyright © 2011 Torsten Feld - All rights reserved.
 #AutoIt3Wrapper_Res_requestedExecutionLevel=requireAdministrator
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
@@ -109,6 +109,9 @@ Func _DcMain()
 	EndIf
 
 	_CheckForUpdate()
+
+	_WriteDebug("INFO;_DcMain;$gDirProgramFilesx86: " & $gDirProgramFilesx86)
+	_WriteDebug("INFO;_DcMain;$gDirProgramFilesx64: " & $gDirProgramFilesx64)
 
 	_DebugToolsMain()
 ;~ 	MsgBox(0, "test", "$gDirDebuggingToolsx64:" & $gDirDebuggingToolsx64 & @CRLF & "$gDirDebuggingToolsx86: " & $gDirDebuggingToolsx86)
