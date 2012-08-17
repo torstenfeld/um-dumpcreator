@@ -219,7 +219,7 @@ Func _DcGui()
 	GUICtrlSetTip(-1, "Whole memory of the process is written to disk")
 	$ButtonCustomDump = GUICtrlCreateButton("Custom dump", 136, 188, 75, 25)
 	GUICtrlSetState(-1, $GUI_HIDE)
-	$ButtonAvira = GUICtrlCreateButton("Extended", 392, 188, 115, 25)
+	$ButtonExtended = GUICtrlCreateButton("Extended", 392, 188, 115, 25)
 	GUICtrlSetTip(-1, "Setting configuration, which is recommended to collect data for troubleshooting")
 	$ButtonMicrosoft = GUICtrlCreateButton("Microsoft", 272, 188, 115, 25)
 	GUICtrlSetTip(-1, "Setting configuration, which is recommended by Microsoft for daily work")
@@ -276,7 +276,7 @@ Func _DcGui()
 	If $gPreVista Then
 		_ChangeAccessUserModeDumpControl(False, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
 		GUICtrlSetState($CheckboxActivate, $GUI_DISABLE)
-		GUICtrlSetState($ButtonAvira, $GUI_DISABLE)
+		GUICtrlSetState($ButtonExtended, $GUI_DISABLE)
 		GUICtrlSetState($ButtonMicrosoft, $GUI_DISABLE)
 		_WriteDebug("WARN;_DcGui;Automatic user dump gui items disabled as prevista")
 	EndIf
@@ -364,8 +364,8 @@ Func _DcGui()
 				If @error Then ContinueLoop
 				_WriteDebug("INFO;_DcGui;$lFolderDump: " & $lFolderDump)
 				GUICtrlSetData($InputDumpLocate, $lFolderDump)
-			Case $ButtonAvira
-				_WriteDebug("INFO;_DcGui;$ButtonAvira clicked")
+			Case $ButtonExtended
+				_WriteDebug("INFO;_DcGui;$ButtonExtended clicked")
 				GUICtrlSetState($CheckboxActivate, $GUI_CHECKED)
 				GUICtrlSetData($InputDumpCount, 10)
 				If GUICtrlRead($InputDumpLocate) = "" Then GUICtrlSetData($InputDumpLocate, "%LOCALAPPDATA%\CrashDumps")
