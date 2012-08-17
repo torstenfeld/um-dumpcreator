@@ -1043,10 +1043,16 @@ EndFunc
 
 Func _CompareUserDumpValues() ; returns 1 if all values are the same
 
+	_WriteDebug("INFO;_CompareUserDumpValues;_CompareUserDumpValues started")
+
 	For $i = 0 To UBound($gaRegUserDumpValues)-1
-		If $gaRegUserDumpValues[$i] <> $gaRegUserDumpValuesNew[$i] Then Return 0
+		If $gaRegUserDumpValues[$i] <> $gaRegUserDumpValuesNew[$i] Then
+			_WriteDebug("INFO;_CompareUserDumpValues;at least one item has changed - returning 0")
+			Return 0
+		EndIf
 	Next
 
+	_WriteDebug("INFO;_CompareUserDumpValues;no item has changed - returning 1")
 	Return 1
 
 EndFunc
