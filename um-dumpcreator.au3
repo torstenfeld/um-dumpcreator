@@ -88,6 +88,7 @@ AutoItSetOption("TrayIconDebug", 1)
 	AutoItSetOption("MouseCoordMode", 1)
 
 	If Not FileExists($gDirTemp) Then DirCreate($gDirTemp)
+	If FileExists($gDbgFile) Then FileDelete($gDbgFile)
 
 	_DcMain()
 
