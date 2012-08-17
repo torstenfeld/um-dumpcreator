@@ -1091,10 +1091,18 @@ EndFunc
 
 Func _SaveValuesToIniFile()
 
+	_WriteDebug("INFO;_SaveValuesToIniFile;_SaveValuesToIniFile started")
+
 	IniWrite($gFileIniValuesSave, "values", "active", $gaRegUserDumpValues[0])
+	If @error Then
+		_WriteDebug("WARN;_SaveValuesToIniFile;could not write value to ini file: " & $gFileIniValuesSave & " - returning error 1")
+		Return SetError(1, 0, 0)
+	EndIf
 	IniWrite($gFileIniValuesSave, "values", "folder", $gaRegUserDumpValues[1])
 	IniWrite($gFileIniValuesSave, "values", "count", $gaRegUserDumpValues[2])
 	IniWrite($gFileIniValuesSave, "values", "type", $gaRegUserDumpValues[3])
+
+	_WriteDebug("INFO;_SaveValuesToIniFile;values written to ini successfully")
 
 EndFunc
 
