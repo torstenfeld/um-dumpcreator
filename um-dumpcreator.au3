@@ -1,14 +1,14 @@
 #RequireAdmin
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_Icon=favicon.ico
-#AutoIt3Wrapper_Outfile=dumpconfigurator-1.2.1.19-x86.exe
-#AutoIt3Wrapper_Outfile_x64=dumpconfigurator-1.2.1.19-x64.exe
+#AutoIt3Wrapper_Outfile=dumpconfigurator-1.2.1.20-x86.exe
+#AutoIt3Wrapper_Outfile_x64=dumpconfigurator-1.2.1.20-x64.exe
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Compile_Both=y
 #AutoIt3Wrapper_UseX64=y
 #AutoIt3Wrapper_Res_Comment=Sets registry settings for automatic creation of user dumps
 #AutoIt3Wrapper_Res_Description=Sets registry settings for automatic creation of user dumps
-#AutoIt3Wrapper_Res_Fileversion=1.2.1.19
+#AutoIt3Wrapper_Res_Fileversion=1.2.1.20
 #AutoIt3Wrapper_Res_LegalCopyright=Copyright © 2011 Torsten Feld - All rights reserved.
 #AutoIt3Wrapper_Res_requestedExecutionLevel=requireAdministrator
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
@@ -52,7 +52,7 @@ AutoItSetOption("TrayIconDebug", 1)
 	Global $gDirTemp = @TempDir & "\dumpconfigurator"
 	Global $gDirUserManualDump
 	Global $gDirProgramFilesx86 = EnvGet("ProgramFiles")
-	If @OSArch = "X64" Then $gDirProgramFilesx86 &= "(x86)"
+	If @OSArch = "X64" Then $gDirProgramFilesx86 &= " (x86)"
 	Global $gDirProgramFilesx64 = EnvGet("ProgramFiles")
 	Global $gFileIniValuesSave = $gDirTemp & "\savedvalues.ini"
 	Global $gDbgFile = $gDirTemp & "\dc-debug.log"
@@ -472,16 +472,21 @@ Func _DcGui()
 ;~ 					'" -FullOnFirst -CTCFB'
 				_WriteDebug("INFO;_DcGui;$lAdPlusParameters: " & $lAdPlusParameters)
 
-				If GUICtrlRead($RadioProcessWaiting) = $GUI_CHECKED Then
-					_WriteDebug("INFO;_DcGui;$RadioProcessWaiting set")
-					Local $lProcessId = ProcessWait($sInputBoxAnswer)
-					Local $lhProcess = _ProcessOpen($lProcessId, 0x00001000)
+				If @OSArch = "X64" Then
+					If GUICtrlRead($RadioProcessWaiting) = $GUI_CHECKED Then
+						_WriteDebug("INFO;_DcGui;$RadioProcessWaiting set")
+						Local $lProcessId = ProcessWait($sInputBoxAnswer)
+						Local $lhProcess = _ProcessOpen($lProcessId, 0x00001000)
+					Else
+						_WriteDebug("INFO;_DcGui;$RadioProcessExists set")
+						Local $lhProcess = _ProcessOpen(StringRegExpReplace(GUICtrlRead($ComboProcesses), ".*\((\d*)\).*", "$1"), 0x00001000)
+					EndIf
+					Local $lProcessArch = _ProcessIsWow64($lhProcess) ; 1 if x86 proc on x64 os
+					_ProcessCloseHandle($lhProcess)
 				Else
-					_WriteDebug("INFO;_DcGui;$RadioProcessExists set")
-					Local $lhProcess = _ProcessOpen(StringRegExpReplace(GUICtrlRead($ComboProcesses), ".*\((\d*)\).*", "$1"), 0x00001000)
+					Local $lProcessArch = 1
 				EndIf
-				Local $lProcessArch = _ProcessIsWow64($lhProcess) ; 1 if x86 proc on x64 os
-				_ProcessCloseHandle($lhProcess)
+
 				If $lProcessArch Then
 					Local $lFileAdPlus = $gDirDebuggingToolsx86 & "\adplus.exe"
 				Else
@@ -811,8 +816,9 @@ Func _DebugToolsCheckInstalled(ByRef $laDbtInfoArray) ; returns 1 if installed
 ;~ 		If $laDbtInfoArray[$i][3] Then $lRegUninstallBase &= "64"
 ;~ 		$lRegUninstallBase &= "\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
 
+		_WriteDebug("INFO;_DebugToolsCheckInstalled;$laDbtInfoArray[$i][3]: " & $laDbtInfoArray[$i][3] & " / @OSArch: " & @OSArch)
 		$lRegUninstallBase = "HKLM\SOFTWARE"
-		If Not $laDbtInfoArray[$i][3] And Not @OSArch = "X86" Then $lRegUninstallBase &= "\Wow6432Node"
+		If Not $laDbtInfoArray[$i][3] And Not (@OSArch = "X86") Then $lRegUninstallBase &= "\Wow6432Node"
 		$lRegUninstallBase &= "\Microsoft\Windows\CurrentVersion\Uninstall\"
 		_WriteDebug("INFO;_DebugToolsCheckInstalled;$lRegUninstallBase: " & $lRegUninstallBase)
 
