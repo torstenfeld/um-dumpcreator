@@ -961,7 +961,7 @@ Func _DebugToolsGetInstallFolder(ByRef $laDbtInfoArray)
 		Return SetError(2, 0, 0)
 	EndIf
 
-	Local $laFolders, $lPathToDebuggingTools
+	Local $laFolders, $lPathToDebuggingTools, $lIniWdtPath
 
 	; filename, download size, installed, x64
 
@@ -971,13 +971,15 @@ Func _DebugToolsGetInstallFolder(ByRef $laDbtInfoArray)
 		_WriteDebug("INFO;_DebugToolsGetInstallFolder;starting check of " & $laDbtInfoArray[$i][0])
 		If $laDbtInfoArray[$i][3] Then ; if file is x64
 			$laFolders = _FileListToArray($gDirProgramFilesx64, "*", 2)
+			$lIniWdtPath = "WdtPath64"
 		Else
 			$laFolders = _FileListToArray($gDirProgramFilesx86, "*", 2)
+			$lIniWdtPath = "WdtPath86"
 		EndIf
 		$lArrayIndex = _ArraySearch($laFolders, "Debugging Tools for Windows", 1, 0, 0, 1)
 		If @error Then
 			_WriteDebug("WARN;_DebugToolsGetInstallFolder;install folder not found for: " & $laDbtInfoArray[$i][0])
-			$lPathToDebuggingTools = IniRead($gFileIniValuesSave, "UserModeManual", "WdtPath", "")
+			$lPathToDebuggingTools = IniRead($gFileIniValuesSave, "UserModeManual", $lIniWdtPath, "")
 			If $lPathToDebuggingTools <> "" Then
 				_WriteDebug("INFO;_DebugToolsGetInstallFolder;read $lPathToDebuggingTools from ini file: " & $lPathToDebuggingTools & " - returning 1")
 				Return 1
@@ -1006,7 +1008,7 @@ Func _DebugToolsGetInstallFolder(ByRef $laDbtInfoArray)
 				_WriteDebug("WARN;_DebugToolsGetInstallFolder;$lPathToDebuggingTools seems not to be valid - returning error 2")
 				Return SetError(2, 0, 0)
 			Else
-				IniWrite($gFileIniValuesSave, "UserModeManual", "WdtPath", $lPathToDebuggingTools)
+				IniWrite($gFileIniValuesSave, "UserModeManual", $lIniWdtPath, $lPathToDebuggingTools)
 				_WriteDebug("INFO;_DebugToolsGetInstallFolder;$lPathToDebuggingTools written to ini file")
 			EndIf
 		Else
