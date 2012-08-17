@@ -1149,17 +1149,31 @@ Func _CheckForUpdate()
 EndFunc
 
 Func _ProcessIsWow64($hProcess)
-	If Not IsPtr($hProcess) Then Return SetError(1,0,False)
+
+	_WriteDebug("INFO;_ProcessIsWow64;_ProcessIsWow64 started")
+
+	If Not IsPtr($hProcess) Then
+		_WriteDebug("WARN;_ProcessIsWow64;$hProcess is no pointer - returning error 1 - false")
+		Return SetError(1,0,False)
+	EndIf
 
 	; Not available on all architectures, but AutoIT uses 'GetProcAddress' here anyway, so no worries about run-time link errors
 	Local $aRet=DllCall($_COMMON_KERNEL32DLL,"bool","IsWow64Process","handle",$hProcess,"bool*",0)
 	If @error Then
 		; Function could not be found (using GetProcAddress), most definitely indicating the function doesn't exist,
 		;	hence, not an x64 O/S  [function IS available on some x86 O/S's, but that's what the next steps are for)
-		If @error=3 Then Return False
+		If @error=3 Then
+			_WriteDebug("WARN;_ProcessIsWow64;error 3 - function IsWow64Process does not exist - probably x86 OS - returning false")
+			Return False
+		EndIf
+		_WriteDebug("WARN;_ProcessIsWow64;error " & @error & " - returning error 2 - false")
 		Return SetError(2,@error,False)	; some other error
 	EndIf
-	If Not $aRet[0] Then Return SetError(3,0,False)	; API returned 'fail'
+	If Not $aRet[0] Then
+		_WriteDebug("WARN;_ProcessIsWow64;api returning fail - returning error 3 - false")
+		Return SetError(3,0,False)	; API returned 'fail'
+	EndIf
+	_WriteDebug("INFO;_ProcessIsWow64;returning " & $aRet[2])
 	Return $aRet[2]	; non-zero = Wow64, 0 = not
 EndFunc
 
