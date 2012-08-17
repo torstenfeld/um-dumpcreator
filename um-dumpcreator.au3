@@ -1178,18 +1178,33 @@ Func _ProcessIsWow64($hProcess)
 EndFunc
 
 Func _ProcessOpen($vProcessID,$iAccess,$bInheritHandle=False)
+
+	_WriteDebug("INFO;_ProcessOpen;_ProcessOpen started")
+
 	Local $aRet
 	; Special 'Open THIS process' ID?  [returns pseudo-handle from Windows]
 	If $vProcessID=-1 Then
 		$aRet=DllCall($_COMMON_KERNEL32DLL,"handle","GetCurrentProcess")
-		If @error Then Return SetError(2,@error,0)
+		If @error Then
+			_WriteDebug("WARN;_ProcessOpen;error in GetCurrentProcess: " & @error & " - returning error 2")
+			Return SetError(2,@error,0)
+		EndIf
+		_WriteDebug("INFO;_ProcessOpen;returning " & $aRet[0])
 		Return $aRet[0]		; usually the constant '-1', but we're keeping it future-OS compatible this way
 	ElseIf Not __PFEnforcePID($vProcessID) Then
+		_WriteDebug("WARN;_ProcessOpen;Process does not exist or was invalid - returning error 16")
 		Return SetError(16,0,0)		; Process does not exist or was invalid
 	EndIf
 	$aRet=DllCall($_COMMON_KERNEL32DLL,"handle","OpenProcess","dword",$iAccess,"bool",$bInheritHandle,"dword",$vProcessID)
-	If @error Then Return SetError(2,@error,0)
-	If Not $aRet[0] Then Return SetError(3,@error,0)
+	If @error Then
+		_WriteDebug("WARN;_ProcessOpen;OpenProcess error: " & @error & " - returning error 2")
+		Return SetError(2,@error,0)
+	EndIf
+	If Not $aRet[0] Then
+		_WriteDebug("WARN;_ProcessOpen;$aRet[0]: " & $aRet[0] & " - returning error 3")
+		Return SetError(3,@error,0)
+	EndIf
+	_WriteDebug("INFO;_ProcessOpen;returning $aRet[0]: " & $aRet[0] & " with process id " & $vProcessID)
 	Return SetExtended($vProcessID,$aRet[0])	; Return Process ID in @extended in case a process name was passed
 EndFunc
 
