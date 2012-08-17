@@ -899,11 +899,13 @@ Func _DebugToolsDownload(ByRef $laDbtInfoArray) ; returns 1 if files were succes
 			Else
 				MsgBox(16,$gTitleMsgBox,"Download of Windows Debugging Tools was not completed (" & $laDbtInfoArray[$i][0] & ").")
 				_WriteDebug("WARN;_DebugToolsDownload;download not complete: " & $laDbtInfoArray[$i][0] & " - returning error 2")
+				ProgressOff()
 				Return SetError(2, 0, 0)
 			EndIf
 		Else
 			MsgBox(16,$gTitleMsgBox,"Download of Windows Debugging Tools failed. (" & $laDbtInfoArray[$i][0] & ")")
 			_WriteDebug("WARN;_DebugToolsDownload;download failed: " & $laDbtInfoArray[$i][0] & " - returning error 3")
+			ProgressOff()
 			Return SetError(3, 0, 0)
 		EndIf
 	Next
