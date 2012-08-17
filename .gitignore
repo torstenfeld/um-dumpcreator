@@ -31,3 +31,6 @@ _ReSharper*/
 incs/APIConstants.au3
 incs/WinAPIEx.au3
 um-dumpcreator.au3.orig
+_GUICtrlComboBox_AutoComplete.au3
+dumpconfigurator-1.0.0.12-x64-test.exe.zip
+test.au3
