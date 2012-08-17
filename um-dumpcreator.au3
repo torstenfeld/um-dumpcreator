@@ -920,13 +920,19 @@ EndFunc
 
 Func _DebugToolsInstall(ByRef $laDbtInfoArray) ; returns 1 if install was successfull
 
+	_WriteDebug("INFO;_DebugToolsInstall;_DebugToolsInstall started")
+
 	; filename, download size, installed, x64
 
 ;~ 	RunWait(@ComSpec & " /c " & $lMsiToInstall & " /qn /lv* " & $gDirTemp & "\windbgt-install.log", "", @SW_HIDE)
 	SplashTextOn($gTitleMsgBox, "Installing Debugging Tools for Windows", 300, 150)
 	For $i = 0 To UBound($laDbtInfoArray)-1
-		If $laDbtInfoArray[$i][2] Then ContinueLoop
+		If $laDbtInfoArray[$i][2] Then
+			_WriteDebug("INFO;_DebugToolsInstall;skipped install of " & $laDbtInfoArray[$i][0])
+			ContinueLoop
+		EndIf
 		ControlSetText($gTitleMsgBox, "", "Static1", "Installing Debugging Tools for Windows (" & $laDbtInfoArray[$i][0] & ")")
+		_WriteDebug("INFO;_DebugToolsInstall;install started: " & $laDbtInfoArray[$i][0])
 		RunWait(@ComSpec & " /c " & $gDirTemp & "\" & $laDbtInfoArray[$i][0] & " /qn /lv* " & $gDirTemp & "\windbgt-install-" & $laDbtInfoArray[$i][0] & ".log", "", @SW_HIDE)
 	next
 	SplashOff()
