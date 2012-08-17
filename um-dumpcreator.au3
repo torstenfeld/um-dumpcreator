@@ -291,6 +291,8 @@ Func _DcGui()
 		GUICtrlSetState($InputUserLocation, $GUI_DISABLE)
 		GUICtrlSetState($ButtonUserBrowse, $GUI_DISABLE)
 		GUICtrlSetState($ButtonUserCreateDump, $GUI_DISABLE)
+		GUICtrlSetState($RadioProcessExists, $GUI_DISABLE)
+		GUICtrlSetState($RadioProcessWaiting, $GUI_DISABLE)
 		_WriteDebug("WARN;_DcGui;Manual user dump gui items disabled as Debugging Tools not installed")
 	Else
 		_GuiComboProcessFill()
