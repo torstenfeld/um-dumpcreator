@@ -1,14 +1,14 @@
 #RequireAdmin
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_Icon=favicon.ico
-#AutoIt3Wrapper_Outfile=dumpconfigurator-1.2.0.18-x86.exe
-#AutoIt3Wrapper_Outfile_x64=dumpconfigurator-1.2.0.18-x64.exe
+#AutoIt3Wrapper_Outfile=dumpconfigurator-1.2.1.19-x86.exe
+#AutoIt3Wrapper_Outfile_x64=dumpconfigurator-1.2.1.19-x64.exe
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Compile_Both=y
 #AutoIt3Wrapper_UseX64=y
 #AutoIt3Wrapper_Res_Comment=Sets registry settings for automatic creation of user dumps
 #AutoIt3Wrapper_Res_Description=Sets registry settings for automatic creation of user dumps
-#AutoIt3Wrapper_Res_Fileversion=1.2.0.18
+#AutoIt3Wrapper_Res_Fileversion=1.2.1.19
 #AutoIt3Wrapper_Res_LegalCopyright=Copyright © 2011 Torsten Feld - All rights reserved.
 #AutoIt3Wrapper_Res_requestedExecutionLevel=requireAdministrator
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
