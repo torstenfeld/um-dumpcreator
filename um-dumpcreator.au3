@@ -839,6 +839,7 @@ EndFunc
 Func _DebugToolsDownload(ByRef $laDbtInfoArray) ; returns 1 if files were successfully loaded and sets error if not
 
 	; filename, download size, installed, x64
+	_WriteDebug("INFO;_DebugToolsDownload;_DebugToolsDownload started")
 
 	Local $lDownloadSuccess = 0
 	Local $lDbtUrlBase = "https://github.com/downloads/torstenfeld/um-dumpcreator/"
@@ -852,14 +853,19 @@ Func _DebugToolsDownload(ByRef $laDbtInfoArray) ; returns 1 if files were succes
 	Local $lhDownload
 	Local $lSkippedArrayEntries = 0
 
+	_WriteDebug("INFO;_DebugToolsDownload;$lDbtUrlBase: " & $lDbtUrlBase)
+
 	For $i = 0 To $lNumberOfLoops
 		If $laDbtInfoArray[$i][2] Then ; skip if version already installed
 			$lSkippedArrayEntries += 1
+			_WriteDebug("INFO;_DebugToolsDownload;download skipped for " & $laDbtInfoArray[$i][0])
 			ContinueLoop
 		EndIf
 		$laDbtInfoArray[$i][1] = InetGetSize($lDbtUrlBase & $laDbtInfoArray[$i][0], 11) / 1024
+		_WriteDebug("INFO;_DebugToolsDownload;size for " & $laDbtInfoArray[$i][0] & ": " & $laDbtInfoArray[$i][1])
 		$lDownloadTotalSize += $laDbtInfoArray[$i][1]
 	Next
+	_WriteDebug("INFO;_DebugToolsDownload;$lDownloadTotalSize: " & $lDownloadTotalSize)
 
 	For $i = 0 To $lNumberOfLoops
 
@@ -885,13 +891,16 @@ Func _DebugToolsDownload(ByRef $laDbtInfoArray) ; returns 1 if files were succes
 		If FileExists($gDirTemp & "\" & $laDbtInfoArray[$i][0]) Then
 			Local $lFileSizeLocally = FileGetSize($gDirTemp & "\" & $laDbtInfoArray[$i][0])
 			If ($lFileSizeLocally / 1024) = $laDbtInfoArray[$i][1] Then
+				_WriteDebug("INFO;_DebugToolsDownload;download successfull: " & $laDbtInfoArray[$i][0])
 				$lDownloadSuccess += 1
 			Else
 				MsgBox(16,$gTitleMsgBox,"Download of Windows Debugging Tools was not completed (" & $laDbtInfoArray[$i][0] & ").")
+				_WriteDebug("WARN;_DebugToolsDownload;download not complete: " & $laDbtInfoArray[$i][0] & " - returning error 2")
 				Return SetError(2, 0, 0)
 			EndIf
 		Else
 			MsgBox(16,$gTitleMsgBox,"Download of Windows Debugging Tools failed. (" & $laDbtInfoArray[$i][0] & ")")
+			_WriteDebug("WARN;_DebugToolsDownload;download failed: " & $laDbtInfoArray[$i][0] & " - returning error 3")
 			Return SetError(3, 0, 0)
 		EndIf
 	Next
@@ -900,9 +909,11 @@ Func _DebugToolsDownload(ByRef $laDbtInfoArray) ; returns 1 if files were succes
 
 	If $lDownloadSuccess = ($lNumberOfLoops + 1 - $lSkippedArrayEntries) then
 		MsgBox(64,$gTitleMsgBox,"Download of Windows Debugging Tools successfull.")
+		_WriteDebug("INFO;_DebugToolsDownload;download of all files successfull - returning 1")
 		Return 1
 	Else
 		MsgBox(16,$gTitleMsgBox,"Download of Windows Debugging Tools failed.")
+		_WriteDebug("ERR ;_DebugToolsDownload;download failed - returning error 4")
 		Return SetError(4, 0, 0)
 	EndIf
 EndFunc
