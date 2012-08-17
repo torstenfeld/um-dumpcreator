@@ -1021,12 +1021,16 @@ EndFunc
 
 Func _GetValuesFromUserDumpItems(ByRef $CheckboxActivate, ByRef $InputDumpCount, ByRef $InputDumpLocate, ByRef $RadioCustomDump, ByRef $RadioMiniDump, ByRef $RadioFullDump)
 
+	_WriteDebug("INFO;_GetValuesFromUserDumpItems;_GetValuesFromUserDumpItems started")
+
 	If GUICtrlRead($CheckboxActivate) = $GUI_UNCHECKED Then
 		$gaRegUserDumpValuesNew[0] = False
+		_WriteDebug("INFO;_GetValuesFromUserDumpItems;$gaRegUserDumpValuesNew[0]: " & $gaRegUserDumpValuesNew[0])
 		Return 0
 	Else
 		$gaRegUserDumpValuesNew[0] = True
 	EndIf
+	_WriteDebug("INFO;_GetValuesFromUserDumpItems;$gaRegUserDumpValuesNew[0]: " & $gaRegUserDumpValuesNew[0] & " - reading values of gui")
 
 	$gaRegUserDumpValuesNew[1] = GUICtrlRead($InputDumpLocate)
 	$gaRegUserDumpValuesNew[2] = GUICtrlRead($InputDumpCount)
