@@ -51,7 +51,8 @@ AutoItSetOption("TrayIconDebug", 1)
 
 	Global $gDirTemp = @TempDir & "\dumpconfigurator"
 	Global $gDirUserManualDump
-	Global $gDirProgramFilesx86 = EnvGet("ProgramFiles(x86)")
+	Global $gDirProgramFilesx86 = EnvGet("ProgramFiles")
+	If @OSArch = "X64" Then $gDirProgramFilesx86 &= "(x86)"
 	Global $gDirProgramFilesx64 = EnvGet("ProgramFiles")
 	Global $gFileIniValuesSave = $gDirTemp & "\savedvalues.ini"
 	Global $gDbgFile = $gDirTemp & "\dc-debug.log"
@@ -811,7 +812,7 @@ Func _DebugToolsCheckInstalled(ByRef $laDbtInfoArray) ; returns 1 if installed
 ;~ 		$lRegUninstallBase &= "\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
 
 		$lRegUninstallBase = "HKLM\SOFTWARE"
-		If Not $laDbtInfoArray[$i][3] Then $lRegUninstallBase &= "\Wow6432Node"
+		If Not $laDbtInfoArray[$i][3] And Not @OSArch = "X86" Then $lRegUninstallBase &= "\Wow6432Node"
 		$lRegUninstallBase &= "\Microsoft\Windows\CurrentVersion\Uninstall\"
 		_WriteDebug("INFO;_DebugToolsCheckInstalled;$lRegUninstallBase: " & $lRegUninstallBase)
 
