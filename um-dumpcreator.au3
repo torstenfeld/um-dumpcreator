@@ -951,7 +951,12 @@ EndFunc
 
 Func _DebugToolsGetInstallFolder(ByRef $laDbtInfoArray)
 
-	If Not $gInstalledDebuggingTools Then Return SetError(2, 0, 0)
+	_WriteDebug("INFO;_DebugToolsGetInstallFolder;_DebugToolsGetInstallFolder started")
+
+	If Not $gInstalledDebuggingTools Then
+		_WriteDebug("WARN;_DebugToolsGetInstallFolder;$gInstalledDebuggingTools: " & $gInstalledDebuggingTools & " - returning error 2")
+		Return SetError(2, 0, 0)
+	EndIf
 
 	Local $laFolders, $lPathToDebuggingTools
 
@@ -960,6 +965,7 @@ Func _DebugToolsGetInstallFolder(ByRef $laDbtInfoArray)
 	Local $lNumberOfLoops = UBound($laDbtInfoArray)-1
 	For $i = 0 To $lNumberOfLoops
 
+		_WriteDebug("INFO;_DebugToolsGetInstallFolder;starting check of " & $laDbtInfoArray[$i][0])
 		If $laDbtInfoArray[$i][3] Then ; if file is x64
 			$laFolders = _FileListToArray($gDirProgramFilesx64, "*", 2)
 		Else
@@ -967,34 +973,46 @@ Func _DebugToolsGetInstallFolder(ByRef $laDbtInfoArray)
 		EndIf
 		$lArrayIndex = _ArraySearch($laFolders, "Debugging Tools for Windows", 1, 0, 0, 1)
 		If @error Then
+			_WriteDebug("WARN;_DebugToolsGetInstallFolder;install folder not found for: " & $laDbtInfoArray[$i][0])
 			$lPathToDebuggingTools = IniRead($gFileIniValuesSave, "UserModeManual", "WdtPath", "")
-			If $lPathToDebuggingTools <> "" Then Return 1
+			If $lPathToDebuggingTools <> "" Then
+				_WriteDebug("INFO;_DebugToolsGetInstallFolder;read $lPathToDebuggingTools from ini file: " & $lPathToDebuggingTools & " - returning 1")
+				Return 1
+			EndIf
 
 			If $laDbtInfoArray[$i][3] Then
 				$lPathToDebuggingTools = FileSelectFolder("Windows Debugging Tools for x64 installation folder could not be found. Please choose folder by yourself.", "", 6, $gDirProgramFilesx64)
 				If @error Then
 					$gInstalledDebuggingTools = false
+					_WriteDebug("WARN;_DebugToolsGetInstallFolder;$lPathToDebuggingTools x64 not chosen manually - returning error 1 - extended 1")
 					Return SetError(1, 1, 0)
 				EndIf
+				_WriteDebug("INFO;_DebugToolsGetInstallFolder;manual folder selected for wdt x64: " & $lPathToDebuggingTools)
 			Else
 				$lPathToDebuggingTools = FileSelectFolder("Windows Debugging Tools for x86 installation folder could not be found. Please choose folder by yourself.", "", 6, $gDirProgramFilesx86)
 				If @error Then
 					$gInstalledDebuggingTools = false
+					_WriteDebug("WARN;_DebugToolsGetInstallFolder;$lPathToDebuggingTools x86 not chosen manually - returning error 1 - extended 2")
 					Return SetError(1, 2, 0)
 				EndIf
+				_WriteDebug("INFO;_DebugToolsGetInstallFolder;manual folder selected for wdt x86: " & $lPathToDebuggingTools)
 			EndIf
 			If Not FileExists($lPathToDebuggingTools & "\adplus.exe") Or Not FileExists($lPathToDebuggingTools & "\cdb.exe") Then
 				MsgBox(16,$gTitleMsgBox,"The directory you entered seems not to be a valid Debugging Tools for Windows (" & $laDbtInfoArray[$i][0] & ") installation folder.")
 				$gInstalledDebuggingTools = false
+				_WriteDebug("WARN;_DebugToolsGetInstallFolder;$lPathToDebuggingTools seems not to be valid - returning error 2")
 				Return SetError(2, 0, 0)
 			Else
 				IniWrite($gFileIniValuesSave, "UserModeManual", "WdtPath", $lPathToDebuggingTools)
+				_WriteDebug("INFO;_DebugToolsGetInstallFolder;$lPathToDebuggingTools written to ini file")
 			EndIf
 		Else
 			If $laDbtInfoArray[$i][3] Then ; if file is x64
 				$gDirDebuggingToolsx64 = $gDirProgramFilesx64 & "\" & $laFolders[$lArrayIndex]
+				_WriteDebug("INFO;_DebugToolsGetInstallFolder;$gDirDebuggingToolsx64: " & $gDirDebuggingToolsx64)
 			Else
 				$gDirDebuggingToolsx86 = $gDirProgramFilesx86 & "\" & $laFolders[$lArrayIndex]
+				_WriteDebug("INFO;_DebugToolsGetInstallFolder;$gDirDebuggingToolsx86: " & $gDirDebuggingToolsx86)
 			EndIf
 		EndIf
 	Next
