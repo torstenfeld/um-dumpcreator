@@ -1209,7 +1209,12 @@ Func _ProcessOpen($vProcessID,$iAccess,$bInheritHandle=False)
 EndFunc
 
 Func _ProcessCloseHandle(ByRef $hProcess)
-	If Not __PFCloseHandle($hProcess) Then Return SetError(@error,@extended,False)
+	_WriteDebug("INFO;_ProcessCloseHandle;_ProcessCloseHandle started")
+	If Not __PFCloseHandle($hProcess) Then
+		_WriteDebug("WARN;_ProcessCloseHandle;error in closing process - returning error: " & @error)
+		Return SetError(@error,@extended,False)
+	EndIf
+	_WriteDebug("INFO;_ProcessCloseHandle;returning true")
 	Return True
 EndFunc
 
