@@ -794,6 +794,8 @@ EndFunc
 
 Func _DebugToolsCheckInstalled(ByRef $laDbtInfoArray) ; returns 1 if installed
 
+	_WriteDebug("INFO;_DebugToolsCheckInstalled;_DebugToolsCheckInstalled started")
+
 	Local $lRegUninstallBase
 	Local $lRegSubKey, $lRegValue, $lDbgToolsFound = 0
 
@@ -806,6 +808,7 @@ Func _DebugToolsCheckInstalled(ByRef $laDbtInfoArray) ; returns 1 if installed
 		$lRegUninstallBase = "HKLM\SOFTWARE"
 		If Not $laDbtInfoArray[$i][3] Then $lRegUninstallBase &= "\Wow6432Node"
 		$lRegUninstallBase &= "\Microsoft\Windows\CurrentVersion\Uninstall\"
+		_WriteDebug("INFO;_DebugToolsCheckInstalled;$lRegUninstallBase: " & $lRegUninstallBase)
 
 		For $j = 1 To 9999999999
 			$lRegSubKey = RegEnumKey($lRegUninstallBase, $j)
@@ -813,22 +816,20 @@ Func _DebugToolsCheckInstalled(ByRef $laDbtInfoArray) ; returns 1 if installed
 			$lRegValue = RegRead($lRegUninstallBase & $lRegSubKey, "DisplayName")
 			If StringInStr($lRegValue, "Debugging Tools for Windows") Then
 ;~ 				MsgBox(0, "test", $lRegUninstallBase & $lRegSubKey)
+				_WriteDebug("INFO;_DebugToolsCheckInstalled;Debug tools found in: " & $lRegUninstallBase & $lRegSubKey)
 				$laDbtInfoArray[$i][2] = 1
 				$lDbgToolsFound += 1
 				ExitLoop
 			EndIf
 		Next
 	Next
-;~ 	_ArrayDisplay($laDbtInfoArray, "$laDbtInfoArray")
-;~ 	Exit
-
-;~ 	MsgBox(0, "test", "UBound($laDbtInfoArray): " & UBound($laDbtInfoArray) & @CRLF & _
-;~ 		"$lDbgToolsFound: " & $lDbgToolsFound) ;test
 
 	If $lDbgToolsFound = UBound($laDbtInfoArray) then
 		$lDbgToolsFound = 1
+		_WriteDebug("INFO;_DebugToolsCheckInstalled;$lDbgToolsFound: " & $lDbgToolsFound)
 	Else
 		$lDbgToolsFound = 0
+		_WriteDebug("WARN;_DebugToolsCheckInstalled;$lDbgToolsFound: " & $lDbgToolsFound)
 	EndIf
 
 	Return $lDbgToolsFound
