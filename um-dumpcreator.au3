@@ -1165,6 +1165,25 @@ Func _CheckForUpdate()
 
 EndFunc
 
+; ===================================================================================================================
+; Func _ProcessIsWow64($hProcess)
+;
+; Determines if process is an x86 (32-bit) process running on an x64 O/S
+;	MSDN:
+;	  'WOW64 is the x86 emulator that allows 32-bit Windows-based applications to run seamlessly on 64-bit Windows'
+;
+; $hProcess = Handle to opened Process
+;	Process should have been opened with PROCESS_QUERY_INFORMATION or PROCESS_QUERY_LIMITED_INFORMATION (Vista+) access
+;
+; Returns:
+;	Success: 0/False or 1 (true) and @error=0
+;	Failure: False, with @error set
+;		@error = 1 = invalid parameter
+;		@error = 2 = DLLCall error (@extended = error code returned from DLLCall)
+;		@error = 3 = API call returned Failure - check GetLastError code for more info
+;
+; Author: Ascend4nt
+; ===================================================================================================================
 Func _ProcessIsWow64($hProcess)
 
 	_WriteDebug("INFO;_ProcessIsWow64;_ProcessIsWow64 started")
@@ -1194,6 +1213,35 @@ Func _ProcessIsWow64($hProcess)
 	Return $aRet[2]	; non-zero = Wow64, 0 = not
 EndFunc
 
+; ===================================================================================================================
+; Func _ProcessOpen($vProcessID,$iAccess,$bInheritHandle=False)
+;
+; Function to open a handle to the given process name/PID.
+;
+; $vProcessID = process name or ID. -1 is special value meaning to return the current process's 'pseudo-handle'
+; $iAccess = Access type (not used when $vProcessID=-1)
+; $bInheritHandle = child processes inherit handle? True/False. False is typical.
+;
+; See 'Process Security and Access Rights (Windows)' at MSDN:
+;	http://msdn.microsoft.com/en-us/library/ms684880%28VS.85%29.aspx
+;
+; Commnly-used access types (combinable) [not used for $vProcessID=-1, which has ALL_ACCESS]:
+;	PROCESS_QUERY_LIMITED_INFORMATION = 0x1000 [VISTA+/Server 2008+ O/S required]
+;	PROCESS_QUERY_INFORMATION = 0x0400,
+;	PROCESS_VM_READ = 0x0010 [for reading process memory],
+;	PROCESS_VM_WRITE = 0x0020 [for writing to process memory]
+;	PROCESS_VM_OPERATION = 0x0008 (for writing and using VirtualProtect)
+;
+; Returns:
+;	Success: Process handle (non-zero value), with @error=0 and @extended = Process ID#
+;	Failure: 0, with @error set:
+;		@error = 1 = invalid param
+;		@error = 2 = DLLCall error, @extended contains the actuall DLLCall @error result (see AutoIT help)
+;		@error = 3 = OpenProcess returned a 0 result (possibly a process that requires higher privilege levels)
+;		@error = 16 = Process passed wasn't a number, and does not exist (process ended or is invalid)
+;
+; Author: Ascend4nt
+; ===================================================================================================================
 Func _ProcessOpen($vProcessID,$iAccess,$bInheritHandle=False)
 
 	_WriteDebug("INFO;_ProcessOpen;_ProcessOpen started")
@@ -1225,6 +1273,23 @@ Func _ProcessOpen($vProcessID,$iAccess,$bInheritHandle=False)
 	Return SetExtended($vProcessID,$aRet[0])	; Return Process ID in @extended in case a process name was passed
 EndFunc
 
+; ===================================================================================================================
+; Func _ProcessCloseHandle(ByRef $hProcess)
+;
+;	Just calls 'CloseHandle' to close process handle that was opened with _ProcessOpen()
+;		(Renamed from _ProcessClose to *Handle due to similarity to ProcessClose() function)
+;
+; $hProcess = Handle to opened Process
+;
+; Returns:
+;	Success: True, with $hProcess invalidated
+;	Failure: False, with @error set:
+;		@error = 1 = invalid parameter
+;		@error = 2 = DLLCall error, @extended = DLLCall error # (see AutoIT documentation)
+;		@error = 3 = 'False' return from API call.
+;
+; Author: Ascend4nt
+; ===================================================================================================================
 Func _ProcessCloseHandle(ByRef $hProcess)
 	_WriteDebug("INFO;_ProcessCloseHandle;_ProcessCloseHandle started")
 	If Not __PFCloseHandle($hProcess) Then
@@ -1235,6 +1300,21 @@ Func _ProcessCloseHandle(ByRef $hProcess)
 	Return True
 EndFunc
 
+; ===================================================================================================================
+; Func __PFEnforcePID(ByRef $vPID)
+;
+; Takes either a Process ID or Process Name and ensures the returned parameter is a Process ID # (on success)
+;	On failure, the passed parameter is invalidated (set to 0 by ProcessExists())
+;
+; $vPID = Process ID # or Process name. If it is a Process name, it will be converted to a PID# on successful return.
+;
+; Returns:
+;	Success: True, with $vPID correctly set as a Processs ID #, @error=0.
+;	Failure: False, with $vPID=0 and @error set:
+;		@error = 1 = invalid parameter or Process does not exist
+;
+; Author: Ascend4nt
+; ===================================================================================================================
 Func __PFEnforcePID(ByRef $vPID)
 	If IsInt($vPID) Then Return True
 	$vPID=ProcessExists($vPID)
@@ -1242,6 +1322,23 @@ Func __PFEnforcePID(ByRef $vPID)
 	Return SetError(1,0,False)
 EndFunc
 
+; ===================================================================================================================
+; Func __PFCloseHandle(ByRef $hHandle)
+;
+;	Closes an opened handle (for many various types of objects)
+;	  [most likely same as _WinAPI_CloseHandle()]
+;
+; $hHandle = Handle to opened object (see list of handles that get closed this way @ MSDN)
+;
+; Returns:
+;	Success: True, with $hHandle invalidated
+;	Failure: False, with @error set:
+;		@error = 1 = invalid parameter
+;		@error = 2 = DLLCall error, @extended = DLLCall error # (see AutoIT documentation)
+;		@error = 3 = Function returned False (failure) - check GetLastError code
+;
+; Author: Ascend4nt
+; ===================================================================================================================
 Func __PFCloseHandle(ByRef $hHandle)
 	If Not IsPtr($hHandle) Or $hHandle=0 Then Return SetError(1,0,False)
 	Local $aRet=DllCall($_COMMON_KERNEL32DLL,"bool","CloseHandle","handle",$hHandle)
