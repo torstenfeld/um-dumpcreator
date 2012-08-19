@@ -61,6 +61,7 @@ AutoItSetOption("TrayIconDebug", 1)
 
 	Global $gVersion
 	Global $gTitleMsgBox = "Dump configurator"
+	Global $gTitleMsgBoxFull
 
 	Global $gaProcesses
 	Global $gPreVista = False
@@ -195,79 +196,88 @@ Func _DcGui()
 	_WriteDebug("INFO;_DcGui;_DcGui started")
 
 	Local $lChButtonActive = False
+	$gTitleMsgBoxFull = $gTitleMsgBox & " - v" & $gVersion
 
 	#Region ### START Koda GUI section ### Form=
-	$FormDcGui = GUICreate($gTitleMsgBox & " - v" & $gVersion, 527, 474, 214, 131)
-	$ButtonCancel = GUICtrlCreateButton("Cancel", 440, 440, 75, 25)
-	GUICtrlSetTip(-1, "Quits the tool")
-	$Tab1 = GUICtrlCreateTab(8, 32, 513, 401)
-	$TabUserMode = GUICtrlCreateTabItem("User mode")
-	$GroupUserAutomatic = GUICtrlCreateGroup("User Mode Automatic", 16, 60, 497, 193)
-	$CheckboxActivate = GUICtrlCreateCheckbox("Activate", 24, 76, 97, 17)
-	GUICtrlSetTip(-1, "(De)activate automatic creation of process dumps, if a process crashes")
-	$LabelDumpCount = GUICtrlCreateLabel("Dump count", 24, 100, 72, 17)
-	$LabelDumpLocate = GUICtrlCreateLabel("Directory to store:", 24, 132, 72, 17)
-	$LabelDumpType = GUICtrlCreateLabel("Type of dump:", 24, 164, 72, 17)
-	$InputDumpCount = GUICtrlCreateInput("", 136, 100, 185, 21)
-	GUICtrlSetTip(-1, "Sets the number of dumps which will be saved until the oldest dump will be deleted")
-	$InputDumpLocate = GUICtrlCreateInput("", 136, 132, 185, 21)
-	GUICtrlSetTip(-1, "Sets the folder to which the dumps are written")
-	$RadioCustomDump = GUICtrlCreateRadio("Custom dump", 136, 164, 97, 17)
-	GUICtrlSetState(-1, $GUI_HIDE)
-	$RadioMiniDump = GUICtrlCreateRadio("Mini dump", 240, 164, 97, 17)
-	GUICtrlSetTip(-1, "Only basic information of the process itself is written to disk")
-	$RadioFullDump = GUICtrlCreateRadio("Full dump", 344, 164, 89, 17)
-	GUICtrlSetTip(-1, "Whole memory of the process is written to disk")
-	$ButtonCustomDump = GUICtrlCreateButton("Custom dump", 136, 188, 75, 25)
-	GUICtrlSetState(-1, $GUI_HIDE)
-	$ButtonExtended = GUICtrlCreateButton("Extended", 392, 188, 115, 25)
-	GUICtrlSetTip(-1, "Setting configuration, which is recommended to collect data for troubleshooting")
-	$ButtonMicrosoft = GUICtrlCreateButton("Microsoft", 272, 188, 115, 25)
-	GUICtrlSetTip(-1, "Setting configuration, which is recommended by Microsoft for daily work")
-	$ButtonUserABrowse = GUICtrlCreateButton("Browse", 368, 132, 75, 25)
-	$ButtonSave = GUICtrlCreateButton("Save", 432, 220, 75, 25)
-	GUICtrlSetTip(-1, "Configuration is written to registry")
-	$ButtonReset = GUICtrlCreateButton("Reset", 136, 220, 75, 25)
-	GUICtrlSetTip(-1, "On setting a new configuration for the first time, the original config is saved for later restore")
-	$ButtonOpen = GUICtrlCreateButton("Open folder", 216, 220, 75, 25)
-	GUICtrlSetTip(-1, "Opens the folder, where dumps are saved")
+	$FormDcGui = GUICreate($gTitleMsgBoxFull, 527, 474, 214, 131)
+	$MenuItem2 = GUICtrlCreateMenu("&File")
+	$MenuItemHelp = GUICtrlCreateMenu("&Help")
+	$MenuItemHelpWeb = GUICtrlCreateMenuItem("Project site", $MenuItemHelp)
+	$MenuItemHelpChangelog = GUICtrlCreateMenuItem("Changelog", $MenuItemHelp)
+	$MenuItemHelpDownload = GUICtrlCreateMenuItem("Download", $MenuItemHelp)
+	$MenuItemHelpCredits = GUICtrlCreateMenuItem("Credits", $MenuItemHelp)
 
+	$ButtonCancel = GUICtrlCreateButton("Cancel", 440, 416, 75, 25)
+	GUICtrlSetTip(-1, "Quits the tool")
+
+	$Tab1 = GUICtrlCreateTab(8, 8, 513, 401)
+	$TabUserMode = GUICtrlCreateTabItem("User mode")
+	$GroupUserAutomatic = GUICtrlCreateGroup("User Mode Automatic", 12, 33, 497, 193)
+	GUICtrlSetFont(-1, 8, 400, 0, "Arial")
+	$CheckboxActivate = GUICtrlCreateCheckbox("Activate", 20, 49, 97, 17)
+	GUICtrlSetTip(-1, "(De)activate automatic creation of process dumps, if a process crashes")
+	$LabelDumpCount = GUICtrlCreateLabel("Dump count", 20, 73, 72, 17)
+	$LabelDumpLocate = GUICtrlCreateLabel("Directory to store:", 20, 105, 72, 17)
+	$LabelDumpType = GUICtrlCreateLabel("Type of dump:", 20, 137, 72, 17)
+	$InputDumpCount = GUICtrlCreateInput("", 132, 73, 185, 22)
+	GUICtrlSetTip(-1, "Sets the number of dumps which will be saved until the oldest dump will be deleted")
+	$InputDumpLocate = GUICtrlCreateInput("", 132, 105, 185, 22)
+	GUICtrlSetTip(-1, "Sets the folder to which the dumps are written")
+	$RadioCustomDump = GUICtrlCreateRadio("Custom dump", 132, 137, 97, 17)
+	GUICtrlSetState(-1, $GUI_HIDE)
+	$RadioMiniDump = GUICtrlCreateRadio("Mini dump", 236, 137, 97, 17)
+	GUICtrlSetTip(-1, "Only basic information of the process itself is written to disk")
+	$RadioFullDump = GUICtrlCreateRadio("Full dump", 340, 137, 89, 17)
+	GUICtrlSetTip(-1, "Whole memory of the process is written to disk")
+	$ButtonCustomDump = GUICtrlCreateButton("Custom dump", 132, 161, 75, 25)
+	GUICtrlSetState(-1, $GUI_HIDE)
+	$ButtonExtended = GUICtrlCreateButton("Extended", 388, 161, 115, 25)
+	GUICtrlSetTip(-1, "Setting configuration, which is recommended to collect data for troubleshooting")
+	$ButtonMicrosoft = GUICtrlCreateButton("Microsoft", 268, 161, 115, 25)
+	GUICtrlSetTip(-1, "Setting configuration, which is recommended by Microsoft for daily work")
+	$ButtonUserABrowse = GUICtrlCreateButton("Browse", 364, 105, 75, 25)
+	$ButtonSave = GUICtrlCreateButton("Save", 428, 193, 75, 25)
+	GUICtrlSetTip(-1, "Configuration is written to registry")
+	$ButtonReset = GUICtrlCreateButton("Reset", 132, 193, 75, 25)
+	GUICtrlSetTip(-1, "On setting a new configuration for the first time, the original config is saved for later restore")
+	$ButtonOpen = GUICtrlCreateButton("Open folder", 212, 193, 75, 25)
+	GUICtrlSetTip(-1, "Opens the folder, where dumps are saved")
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
-	$GroupUserManual = GUICtrlCreateGroup("User Mode Manual", 16, 260, 497, 161)
-	$Label1 = GUICtrlCreateLabel("Choose Process:", 24, 284, 84, 17)
-	$ComboProcesses = GUICtrlCreateCombo("", 136, 284, 217, 25)
-	$ButtonRefresh = GUICtrlCreateButton("Refresh", 368, 284, 75, 25)
+	$GroupUserManual = GUICtrlCreateGroup("User Mode Manual", 12, 233, 497, 161)
+	GUICtrlSetFont(-1, 8, 400, 0, "Arial")
+	$Label1 = GUICtrlCreateLabel("Choose Process:", 20, 257, 84, 17)
+	$ComboProcesses = GUICtrlCreateCombo("", 132, 257, 217, 25, BitOR($CBS_DROPDOWN,$CBS_AUTOHSCROLL))
+	$ButtonRefresh = GUICtrlCreateButton("Refresh", 364, 257, 75, 25)
 	GUICtrlSetTip(-1, "Refresh the process list")
-	$ButtonCrosshair = GUICtrlCreateButton("", 480, 284, 25, 25)
+	$ButtonCrosshair = GUICtrlCreateButton("", 476, 257, 25, 25)
 	GUICtrlSetTip(-1, "Click to get process by windows")
-	$Label2 = GUICtrlCreateLabel("Type of dump:", 24, 348, 72, 17)
-	GUICtrlCreateGroup("", -99, -99, 1, 1)
-	$RadioUserCrash = GUICtrlCreateRadio("Crash", 136, 348, 89, 17)
+	$Label2 = GUICtrlCreateLabel("Type of dump:", 20, 321, 72, 17)
+	$RadioUserCrash = GUICtrlCreateRadio("Crash", 132, 321, 89, 17)
 	GUICtrlSetTip(-1, "Select if you would like to get a dump of a crashed process")
 	GUICtrlSetState(-1, $GUI_CHECKED)
-	$RadioUserHang = GUICtrlCreateRadio("Hang", 232, 348, 113, 17)
+	$RadioUserHang = GUICtrlCreateRadio("Hang", 228, 321, 113, 17)
 	GUICtrlSetTip(-1, "Select if you would like to get a dump of a hanging process")
-	$Label3 = GUICtrlCreateLabel("Dump location:", 24, 316, 75, 17)
-	$InputUserLocation = GUICtrlCreateInput("", 136, 316, 185, 21)
+	$Label3 = GUICtrlCreateLabel("Dump location:", 20, 289, 75, 17)
+	$InputUserLocation = GUICtrlCreateInput("", 132, 289, 185, 22)
 	GUICtrlSetTip(-1, "Specify the folder where the dumps should be saved")
-	$ButtonUserBrowse = GUICtrlCreateButton("Browse", 368, 316, 75, 25)
+	$ButtonUserBrowse = GUICtrlCreateButton("Browse", 364, 289, 75, 25)
 	GUICtrlSetTip(-1, "Click to browse for the folder where the dumps should be saved")
-	$Label4 = GUICtrlCreateLabel("Process existing:", 24, 380, 83, 17)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
-	$RadioProcessExists = GUICtrlCreateRadio("Existing", 136, 380, 89, 17)
+	$Label4 = GUICtrlCreateLabel("Process existing:", 20, 353, 83, 17)
+	$RadioProcessExists = GUICtrlCreateRadio("Existing", 132, 353, 89, 17)
 	GUICtrlSetState(-1, $GUI_CHECKED)
 	GUICtrlSetTip(-1, "Select if the process has already crashed")
-	$RadioProcessWaiting = GUICtrlCreateRadio("Waiting for", 232, 380, 113, 17)
+	$RadioProcessWaiting = GUICtrlCreateRadio("Waiting for", 228, 353, 113, 17)
 	GUICtrlSetTip(-1, "Select if the process is currently not running")
-	$ButtonUserCreateDump = GUICtrlCreateButton("Create dump", 368, 380, 75, 25)
+	$ButtonUserCreateDump = GUICtrlCreateButton("Create dump", 364, 353, 75, 25)
 	GUICtrlSetTip(-1, "Click to start dump creation")
-
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 	$TabKernelMode = GUICtrlCreateTabItem("Kernel mode")
 	GUICtrlCreateTabItem("")
+;~ 	Dim $FormDcGui_AccelTable[2][2] = [["0", $MenuItemHelpDownload],["{BS}", $MenuItemHelpCredits]]
+;~ 	GUISetAccelerators($FormDcGui_AccelTable)
 	GUISetState(@SW_SHOW)
 	#EndRegion ### END Koda GUI section ###
-
 
 	If Not FileExists($gFileIniValuesSave) Then GUICtrlSetState($ButtonReset, $GUI_DISABLE)
 	_SetValuesToUserDumpItems($CheckboxActivate, $InputDumpCount, $InputDumpLocate, $RadioCustomDump, $RadioMiniDump, $RadioFullDump)
@@ -309,6 +319,14 @@ Func _DcGui()
 			Case $GUI_EVENT_CLOSE, $ButtonCancel
 				_WriteDebug("INFO;_DcGui;$GUI_EVENT_CLOSE, $ButtonCancel - exit")
 				Exit
+			Case $MenuItemHelpWeb
+				ShellExecute("https://github.com/torstenfeld/um-dumpcreator")
+			Case $MenuItemHelpChangelog
+				ShellExecute("https://github.com/torstenfeld/um-dumpcreator#readme")
+			Case $MenuItemHelpDownload
+				ShellExecute("https://github.com/torstenfeld/um-dumpcreator/downloads")
+			Case $MenuItemHelpCredits
+				_DcGuiCredits($FormDcGui)
 			Case $ButtonCrosshair
 				_WriteDebug("INFO;_DcGui;$ButtonCrosshair clicked")
 				If $lChButtonActive Then
@@ -509,6 +527,28 @@ Func _DcGui()
 				GUICtrlSetState($ComboProcesses, $GUI_ENABLE)
 				_WriteDebug("INFO;_DcGui;$RadioProcessExists checked")
 
+		EndSwitch
+	WEnd
+
+EndFunc
+
+Func _DcGuiCredits($lhParent)
+
+	#Region ### START Koda GUI section ### Form=
+	$FormCredits = GUICreate("Credits", 282, 273, -1, -1, -1, -1, $lhParent)
+	$EditCredits = GUICtrlCreateEdit("", 8, 8, 265, 225, BitOR($ES_AUTOVSCROLL, $ES_WANTRETURN, $ES_READONLY));, $WS_VSCROLL))
+	GUICtrlSetData(-1, "Edit1")
+	$ButtonOk = GUICtrlCreateButton("Ok", 8, 240, 267, 25)
+	GUISetState(@SW_SHOW)
+	#EndRegion ### END Koda GUI section ###
+
+	While 1
+		$nMsgCredits = GUIGetMsg()
+		Switch $nMsgCredits
+			Case $GUI_EVENT_CLOSE, $ButtonOk
+				GUIDelete($FormCredits)
+				If WinExists($gTitleMsgBoxFull) Then WinActivate($gTitleMsgBoxFull)
+				ExitLoop
 		EndSwitch
 	WEnd
 
