@@ -205,6 +205,10 @@ Func _DcGui()
 	$MenuItemHelpChangelog = GUICtrlCreateMenuItem("Changelog", $MenuItemHelp)
 	$MenuItemHelpDownload = GUICtrlCreateMenuItem("Download", $MenuItemHelp)
 	$MenuItemHelpCredits = GUICtrlCreateMenuItem("Credits", $MenuItemHelp)
+	GUICtrlCreateMenuItem("", $MenuItemHelp)
+	$MenuItemHelpUpdate = GUICtrlCreateMenuItem("Check for update", $MenuItemHelp)
+	GUICtrlCreateMenuItem("", $MenuItemHelp)
+	$MenuItemHelpOpenDbgLog = GUICtrlCreateMenuItem("Open debug log", $MenuItemHelp)
 
 	$ButtonCancel = GUICtrlCreateButton("Cancel", 440, 416, 75, 25)
 	GUICtrlSetTip(-1, "Quits the tool")
@@ -318,13 +322,23 @@ Func _DcGui()
 			Case $GUI_EVENT_CLOSE, $ButtonCancel
 				_WriteDebug("INFO;_DcGui;$GUI_EVENT_CLOSE, $ButtonCancel - exit")
 				Exit
+			Case $MenuItemHelpOpenDbgLog
+				_WriteDebug("INFO;_DcGui;$MenuItemHelpOpenDbgLog clicked")
+				ShellExecute($gDbgFile)
+			Case $MenuItemHelpUpdate
+				_WriteDebug("INFO;_DcGui;$MenuItemHelpUpdate clicked")
+				_CheckForUpdate()
 			Case $MenuItemHelpWeb
+				_WriteDebug("INFO;_DcGui;$MenuItemHelpWeb clicked")
 				ShellExecute("https://github.com/torstenfeld/um-dumpcreator")
 			Case $MenuItemHelpChangelog
+				_WriteDebug("INFO;_DcGui;$MenuItemHelpChangelog clicked")
 				ShellExecute("https://github.com/torstenfeld/um-dumpcreator#readme")
 			Case $MenuItemHelpDownload
+				_WriteDebug("INFO;_DcGui;$MenuItemHelpDownload clicked")
 				ShellExecute("https://github.com/torstenfeld/um-dumpcreator/downloads")
 			Case $MenuItemHelpCredits
+				_WriteDebug("INFO;_DcGui;$MenuItemHelpCredits clicked")
 				_DcGuiCredits($FormDcGui)
 			Case $ButtonCrosshair
 				_WriteDebug("INFO;_DcGui;$ButtonCrosshair clicked")
@@ -533,19 +547,32 @@ EndFunc
 
 Func _DcGuiCredits($lhParent)
 
+	_WriteDebug("INFO;_DcGuiCredits;_DcGuiCredits started")
+
+	Local $lEditMessage = "External sources" & @CRLF & "----------" & @CRLF & _
+		"ascend4nt (https://sites.google.com/site/ascend4ntscode/)" & @CRLF & _
+		" - _ProcessIsWow64" & @CRLF & _
+		" - _ProcessOpen" & @CRLF & _
+		" - _ProcessCloseHandle" & @CRLF & _
+		" - __PFEnforcePID" & @CRLF & _
+		" - __PFCloseHandle"
+
 	#Region ### START Koda GUI section ### Form=
-	$FormCredits = GUICreate("Credits", 282, 273, -1, -1, -1, -1, $lhParent)
-	$EditCredits = GUICtrlCreateEdit("", 8, 8, 265, 225, BitOR($ES_AUTOVSCROLL, $ES_WANTRETURN, $ES_READONLY));, $WS_VSCROLL))
-	GUICtrlSetData(-1, "Edit1")
-	$ButtonOk = GUICtrlCreateButton("Ok", 8, 240, 267, 25)
+	$FormCredits = GUICreate("Credits", 370, 274, -1, -1)
+	$EditCredits = GUICtrlCreateEdit($lEditMessage, 8, 8, 353, 225, BitOR($ES_AUTOVSCROLL, $ES_WANTRETURN, $ES_READONLY))
+	$ButtonOk = GUICtrlCreateButton("Ok", 8, 240, 355, 25)
+	GUICtrlSetState(-1, $GUI_DEFBUTTON)
 	GUISetState(@SW_SHOW)
 	#EndRegion ### END Koda GUI section ###
+
+	_WriteDebug("INFO;_DcGuiCredits;$FormCredits is shown")
 
 	While 1
 		$nMsgCredits = GUIGetMsg()
 		Switch $nMsgCredits
 			Case $GUI_EVENT_CLOSE, $ButtonOk
 				GUIDelete($FormCredits)
+				_WriteDebug("INFO;_DcGuiCredits;$FormCredits deleted")
 				If WinExists($gTitleMsgBoxFull) Then WinActivate($gTitleMsgBoxFull)
 				ExitLoop
 		EndSwitch
