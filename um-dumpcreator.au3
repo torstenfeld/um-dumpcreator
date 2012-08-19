@@ -200,7 +200,6 @@ Func _DcGui()
 
 	#Region ### START Koda GUI section ### Form=
 	$FormDcGui = GUICreate($gTitleMsgBoxFull, 527, 474, 214, 131)
-	$MenuItem2 = GUICtrlCreateMenu("&File")
 	$MenuItemHelp = GUICtrlCreateMenu("&Help")
 	$MenuItemHelpWeb = GUICtrlCreateMenuItem("Project site", $MenuItemHelp)
 	$MenuItemHelpChangelog = GUICtrlCreateMenuItem("Changelog", $MenuItemHelp)
