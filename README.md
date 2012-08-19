@@ -16,6 +16,13 @@ https://trello.com/board/dev-usermode-dump-creator/501f9039d4fe3721757fa651
 * none so far
 
 ## Changelog
+### 1.2.1.20
+* fixed crash on tool startup
+* fixed persisting download progress bar if download failed
+* improved logging
+* fixed not deactivated radio buttons for user dump manual function
+* fixed recognition of installed Windows Debugging Tools
+
 ### 1.2.0.16
 * added logging to %temp%\dumpconfigurator\dc-debug.log
 * renamed variable for 'extended' button from $ButtonAvira to $ButtonExtended
