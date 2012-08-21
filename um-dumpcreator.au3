@@ -64,6 +64,8 @@ AutoItSetOption("TrayIconDebug", 1)
 	Global $gTitleMsgBox = "Dump configurator"
 	Global $gTitleMsgBoxFull
 
+	Global $gaUserModeAutomaticDumps
+
 	Global $gaProcesses
 	Global $gPreVista = False
 	Global $gInstalledDebuggingTools
@@ -126,7 +128,8 @@ Func _DcMain()
 ;~ 	$gPreVista = True ;test
 
 	_RegistryGetValues()
-;~ 	_ArrayDisplay($gaRegUserDumpValues, "$gaRegUserDumpValues")
+	_GetUserModeAutomaticDumps()
+;~ 	_ArrayDisplay($gaUserModeAutomaticDumps, "$gaUserModeAutomaticDumps")
 	_DcGui()
 
 EndFunc
@@ -763,7 +766,7 @@ Func _RegistryGetValues()
 	$gaRegUserDumpValues[1] = RegRead($lRegBase, "DumpFolder")
 	If $gaRegUserDumpValues[1] <> "" Then
 		$gaRegUserDumpValues[0] = True
-		$gDirUserAutomaticDump = $gaRegUserDumpValues[1]
+		$gDirUserAutomaticDump = _GetRealFolderFromSystemvariable($gaRegUserDumpValues[1])
 		_WriteDebug("INFO;_RegistryGetValues;$gDirUserAutomaticDump: " & $gDirUserAutomaticDump)
 	Else
 		$gDirUserAutomaticDump = ""
@@ -1220,6 +1223,20 @@ Func _GetRealFolderFromSystemvariable($lDirWithVariable) ; returns real path
 	Local $lResult = StringReplace($lDirWithVariable, "%" & $lTempStringBetweenResult & "%", EnvGet($lTempStringBetweenResult))
 	_WriteDebug("INFO;_GetRealFolderFromSystemvariable;returning " & $lResult)
 	Return $lResult
+
+EndFunc
+
+Func _GetUserModeAutomaticDumps()
+
+	_WriteDebug("INFO;_GetUserModeAutomaticDumps;_GetUserModeAutomaticDumps started")
+
+	$gaUserModeAutomaticDumps = _FileListToArray($gDirUserAutomaticDump, "*.dmp", 1)
+	If @error Then
+		_WriteDebug("WARN;_GetUserModeAutomaticDumps;_FileListToArray for " & $gDirUserAutomaticDump & " failed with error " & @error & " - returning error 1")
+		Dim $gaUserModeAutomaticDumps[1] = [0]
+		Return SetError(1, 0, 0)
+	EndIf
+	_WriteDebug("INFO;_FileListToArray;$gaUserModeAutomaticDumps has " & $gaUserModeAutomaticDumps[0] & " items")
 
 EndFunc
 
