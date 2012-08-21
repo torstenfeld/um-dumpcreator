@@ -327,7 +327,7 @@ Func _DcGui()
 				ShellExecute($gDbgFile)
 			Case $MenuItemHelpUpdate
 				_WriteDebug("INFO;_DcGui;$MenuItemHelpUpdate clicked")
-				_CheckForUpdate()
+				If Not _CheckForUpdate() Then MsgBox(262208, $gTitleMsgBox, "You are using the latest version. No update is necessary.",15)
 			Case $MenuItemHelpWeb
 				_WriteDebug("INFO;_DcGui;$MenuItemHelpWeb clicked")
 				ShellExecute("https://github.com/torstenfeld/um-dumpcreator")
@@ -1207,7 +1207,7 @@ Func _CheckBackupIniFileValues() ; returns 1 if backup has already been made
 	Return 1
 EndFunc
 
-Func _CheckForUpdate()
+Func _CheckForUpdate() ; returns 1 if update available
 
 	_WriteDebug("INFO;_CheckForUpdate;_CheckForUpdate started")
 
@@ -1227,6 +1227,9 @@ Func _CheckForUpdate()
 			Case $iMsgBoxAnswer = 7 ;No
 				_WriteDebug("WARN;_CheckForUpdate;user chose NOT to open website")
 		EndSelect
+		Return 1
+	Else
+		Return 0
 	EndIf
 
 EndFunc
