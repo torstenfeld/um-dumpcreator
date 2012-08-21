@@ -423,11 +423,7 @@ Func _DcGui()
 			Case $ButtonOpen
 				_WriteDebug("INFO;_DcGui;$ButtonOpen clicked")
 				$lFolderDump = GUICtrlRead($InputDumpLocate)
-				If StringInStr($lFolderDump, "%") Then
-					_WriteDebug("INFO;_DcGui;system variable used $lFolderDump: " & $lFolderDump)
-					$lTempStringBetweenResult = StringRegExpReplace($lFolderDump, ".*\%(.*)\%.*", "$1")
-					$lFolderDump = StringReplace($lFolderDump, "%" & $lTempStringBetweenResult & "%", EnvGet($lTempStringBetweenResult))
-				EndIf
+				If StringInStr($lFolderDump, "%") Then $lFolderDump = _GetRealFolderFromSystemvariable($lFolderDump)
 				If FileExists($lFolderDump) Then
 					_WriteDebug("INFO;_DcGui;$lFolderDump exists - opening: " & $lFolderDump)
 					ShellExecute($lFolderDump)
@@ -1215,6 +1211,16 @@ Func _CheckBackupIniFileValues() ; returns 1 if backup has already been made
 	_WriteDebug("INFO;_CheckBackupIniFileValues;ini values read successfully - returning 1")
 
 	Return 1
+EndFunc
+
+Func _GetRealFolderFromSystemvariable($lDirWithVariable) ; returns real path
+
+	_WriteDebug("INFO;_GetRealFolderFromSystemvariable;system variable used $lFolderDump: " & $lDirWithVariable)
+	Local $lTempStringBetweenResult = StringRegExpReplace($lDirWithVariable, ".*\%(.*)\%.*", "$1")
+	Local $lResult = StringReplace($lDirWithVariable, "%" & $lTempStringBetweenResult & "%", EnvGet($lTempStringBetweenResult))
+	_WriteDebug("INFO;_GetRealFolderFromSystemvariable;returning " & $lResult)
+	Return $lResult
+
 EndFunc
 
 Func _CheckForUpdate() ; returns 1 if update available
