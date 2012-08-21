@@ -50,6 +50,7 @@ AutoItSetOption("TrayIconDebug", 1)
 	Global $gaRegUserDumpValuesNew[4] ; active, folder, count, type
 
 	Global $gDirTemp = @TempDir & "\dumpconfigurator"
+	Global $gDirUserAutomaticDump
 	Global $gDirUserManualDump
 	Global $gDirProgramFilesx86 = EnvGet("ProgramFiles")
 	If @OSArch = "X64" Then $gDirProgramFilesx86 &= " (x86)"
@@ -764,11 +765,20 @@ Func _RegistryGetValues()
 	$gaRegUserDumpValues[0] = False
 
 	$gaRegUserDumpValues[1] = RegRead($lRegBase, "DumpFolder")
+	If $gaRegUserDumpValues[1] <> "" Then
+		$gaRegUserDumpValues[0] = True
+		$gDirUserAutomaticDump = $gaRegUserDumpValues[1]
+		_WriteDebug("INFO;_RegistryGetValues;$gDirUserAutomaticDump: " & $gDirUserAutomaticDump)
+	Else
+		$gDirUserAutomaticDump = ""
+		_WriteDebug("INFO;_RegistryGetValues;$gDirUserAutomaticDump: " & $gDirUserAutomaticDump)
+		Return SetError(1, 0, 0)
+	EndIf
+
 	$gaRegUserDumpValues[2] = RegRead($lRegBase, "DumpCount")
 	$gaRegUserDumpValues[3] = RegRead($lRegBase, "DumpType")
 	_WriteDebug("INFO;_RegistryGetValues;Registry values read")
 
-	If $gaRegUserDumpValues[1] <> "" Then $gaRegUserDumpValues[0] = True
 	_WriteDebug("INFO;_RegistryGetValues;$gaRegUserDumpValues[0]: " & $gaRegUserDumpValues[0])
 
 EndFunc
