@@ -2,11 +2,13 @@
 
 Provides an easy to use GUI for user and kernel mode dumps
 
-## Planning Board
+## Links
 
-https://trello.com/board/dev-usermode-dump-creator/501f9039d4fe3721757fa651
+* Planning board: https://trello.com/board/dev-usermode-dump-creator/501f9039d4fe3721757fa651
+* Crowd sourced translation: http://www.getlocalization.com/dumpconfigurator/ (translate dump configurator in your preferred language!)
 
 ## Features
+* Localizations support added
 * Set registry settings on Windows Vista and above for automatic creation of process dumps
 * Create dumps for hanging or crashing processes manually
 * Monitoring processes with creation of dumps on crash / exit
